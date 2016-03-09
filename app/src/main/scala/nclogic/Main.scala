@@ -1,7 +1,7 @@
 package nclogic
 
-import pl.edu.pw.elka.madamek.nclogic.{HistoryGraphFactory, Parser, Tokenizer}
-import pl.edu.pw.elka.madamek.nclogic.solver.DnfConverter
+import nclogic.solver.DnfConverter
+
 
 object Main extends App {
 
@@ -13,8 +13,7 @@ object Main extends App {
     expr <- Parser.parse(tokens)
   } yield expr
 
-
-  println(DnfConverter.convertExpr(expr.get.simplify))
+  
   val dnf = DnfConverter.convert(expr.get.simplify)
 
 

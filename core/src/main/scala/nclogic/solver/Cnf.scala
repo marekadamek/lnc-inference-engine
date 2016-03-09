@@ -1,6 +1,6 @@
-package pl.edu.pw.elka.madamek.nclogic.solver
+package nclogic.solver
 
-import pl.edu.pw.elka.madamek.nclogic.model.Types._
+import nclogic.model.Types._
 
 /**
  * Conjunctive Normal Form

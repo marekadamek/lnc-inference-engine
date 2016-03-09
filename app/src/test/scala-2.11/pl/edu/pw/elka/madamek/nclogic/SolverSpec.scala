@@ -3,7 +3,6 @@ package pl.edu.pw.elka.madamek.nclogic
 import org.scalatest._
 import Tokenizer
 import pl.edu.pw.elka.madamek.nclogic.sat.Sat
-import pl.edu.pw.elka.madamek.nclogic.solver.Solver
 
 
 class SolverSpec extends FlatSpec with Matchers {

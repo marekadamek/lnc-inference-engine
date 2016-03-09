@@ -1,7 +1,8 @@
-package pl.edu.pw.elka.madamek.nclogic
+package nclogic
 
-import pl.edu.pw.elka.madamek.nclogic.model.Tokens
-import pl.edu.pw.elka.madamek.nclogic.model.Types._
+
+import nclogic.model.Tokens
+import nclogic.model.Types._
 
 import scala.util.Try
 

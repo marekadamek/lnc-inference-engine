@@ -1,7 +1,6 @@
-package pl.edu.pw.elka.madamek.nclogic
+package nclogic
 
-import pl.edu.pw.elka.madamek.nclogic.model.Types.{Var, Neg, N, Expr}
-
+import nclogic.model.Types.{N, Neg, Var, Expr}
 
 case class Node(state: Set[Expr], private val getSuccessors: () => Set[Node]) {
   lazy val successors = getSuccessors()

@@ -1,8 +1,9 @@
-package pl.edu.pw.elka.madamek.nclogic
+package nclogic
 
-import pl.edu.pw.elka.madamek.nclogic.model.Tokens
+import nclogic.model.Tokens
 
 import scala.util.Try
+
 
 object Tokenizer {
 

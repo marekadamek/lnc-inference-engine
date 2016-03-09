@@ -1,10 +1,9 @@
-package pl.edu.pw.elka.madamek.nclogic.sat
+package nclogic.sat
 
-import pl.edu.pw.elka.madamek.nclogic.model.Types.{Expr, Neg}
-import pl.edu.pw.elka.madamek.nclogic.solver.Cnf
+import nclogic.model.Types.{Neg, Expr}
+import nclogic.solver.Cnf
 
 object Sat {
-
   def solve(cnf: Cnf): Set[Set[Expr]] = {
     def solve(andList: Set[Set[Expr]], terms: Set[Expr]): Set[Set[Expr]] = {
       if (andList.isEmpty) Set(terms)

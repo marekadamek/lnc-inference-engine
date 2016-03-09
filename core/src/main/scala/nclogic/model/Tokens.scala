@@ -1,4 +1,4 @@
-package pl.edu.pw.elka.madamek.nclogic.model
+package nclogic.model
 
 object Tokens {
 

@@ -1,20 +1,13 @@
-package pl.edu.pw.elka.madamek.nclogic.solver
+package nclogic.solver
 
-import pl.edu.pw.elka.madamek.nclogic.model.Types._
+import nclogic._
+import nclogic.model.Types.{Neg, Or, And, Expr}
 
-trait DnfConverter {
-  def convert(expr: Expr): Set[Set[Expr]]
-}
-
-object DnfConverter extends DnfConverter {
-
-  implicit class Iff[T](val b: T) {
-    def :>[B](f: T => B):B = f(b)
-  }
+object DnfConverter {
 
   def convert(expr: Expr): Set[Set[Expr]] = expr :> convertExpr :> makeSet :> simplify
 
-  def convertExpr(expr: Expr): Expr = expr match {
+  private def convertExpr(expr: Expr): Expr = expr match {
     // f((e1 | e2) & e) -> f(e1 & e) | f(e2 & e)
     case And(es) => es.find(_.isInstanceOf[Or]) match {
       case Some(or@Or(ors)) =>
