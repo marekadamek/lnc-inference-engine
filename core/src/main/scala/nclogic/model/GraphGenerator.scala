@@ -1,6 +1,6 @@
-package nclogic
+package nclogic.model
 
-import nclogic.model.Types.{N, Neg, Var, Expr}
+import nclogic.model.Types.{Expr, N, Neg, Var}
 
 case class Node(state: Set[Expr], private val getSuccessors: () => Set[Node]) {
   lazy val successors = getSuccessors()
@@ -45,7 +45,6 @@ object HistoryGraphFactory {
           .filter(_.isDefined)
           .map(_.get)
           .filterNot(_ == state)
-          //.filter(next => dnf.exists(and => (and & next) == and))
           .map(createNode)
       })
     }
@@ -56,7 +55,7 @@ object HistoryGraphFactory {
   }
 
 
-  private def nextStep(state: Set[Expr]): Option[Set[Expr]] = {
+  def nextStep(state: Set[Expr]): Option[Set[Expr]] = {
     val (ns, vars) = state partition {
       _.isInstanceOf[N]
     }
@@ -83,8 +82,6 @@ object HistoryGraphFactory {
         Set(tail + v, tail + Neg(v))
       }
   }
-
-  private def :>[A,B](x:A, f:A => B) = f(x)
 
   private def getValuations(vars: Set[Var], formula: Set[Expr]): Set[Set[Expr]] = {
     val freeVariables = vars filterNot { v => formula.contains(v) || formula.contains(Neg(v)) }

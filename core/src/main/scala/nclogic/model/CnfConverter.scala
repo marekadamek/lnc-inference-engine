@@ -1,13 +1,10 @@
-package nclogic.solver
+package nclogic.model
 
-import nclogic.model.Types.{Neg, And, Or, Expr}
+import nclogic.model.Types.{And, Expr, Neg, Or}
 
 
 object CnfConverter {
-
-  implicit class Iff[T](val b: T) {
-    def :>[B](f: T => B):B = f(b)
-  }
+  import nclogic._
 
   def convert(expr: Expr): Set[Set[Expr]] = expr :> convertExpr :> makeSet :> simplify
 
@@ -16,7 +13,7 @@ object CnfConverter {
     case Or(es) => es.find(_.isInstanceOf[And]) match {
       case Some(and@And(ands)) =>
         val rest = es.filterNot(_ == and)
-        And(ands.map(a => convertExpr(Or(rest + a)))).simplify
+        convertExpr(And(ands.map(a => Or(rest + a))).simplify)
       case _ => expr
     }
     // proceed conversion recursively

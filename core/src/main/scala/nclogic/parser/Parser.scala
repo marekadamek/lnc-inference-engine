@@ -1,11 +1,9 @@
-package nclogic
+package nclogic.parser
 
-
-import nclogic.model.Tokens
 import nclogic.model.Types._
-
+import nclogic.parser.Tokenizer.Tokens._
 import scala.util.Try
-
+import nclogic._
 /**
  * E -> T | F | Var | !a | (E) | E OP E | Fun(E)
  * Var -> (a-z)+
@@ -14,8 +12,6 @@ import scala.util.Try
  */
 
 object Parser {
-
-  import Tokens._
 
   private val TmpPrefix = "TMP-"
 
@@ -54,7 +50,7 @@ object Parser {
     }).getOrElse(fallback(tokens, tmp))
   }
 
-  def processBracket(key: String, map: Map[Int, List[String]]) = {
+  private def processBracket(key: String, map: Map[Int, List[String]]) = {
     val k = key.drop(TmpPrefix.length).toInt
     parseTokens(map(k), map - k)
   }
@@ -92,4 +88,6 @@ object Parser {
   def parse(tokens: List[String]): Try[Expr] = Try {
     parseTokens(tokens, Map.empty)
   }
+
+  def parse(formula: String): Try[Expr] = formula :> Tokenizer.tokenize flatMap parse
 }

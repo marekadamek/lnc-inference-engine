@@ -1,9 +1,9 @@
 package nclogic
 
-import nclogic.model.Types.{Neg, Expr}
-import nclogic.solver.{DnfConverter, CnfConverter}
+import nclogic.model.{HistoryGraphFactory, DnfConverter, Types}
+import nclogic.model.Types.{Expr, Neg}
 
-class LncInferenceEngine {
+object LncInferenceEngine {
 
   def containsComplementaryPair(elems: Set[Expr]): Boolean = {
     def containsComplementaryPair(elems: List[Expr]): Boolean = elems match {
@@ -16,13 +16,15 @@ class LncInferenceEngine {
     containsComplementaryPair(elems.toList)
   }
 
-  def isTautology(formula: Expr) = CnfConverter.convert(formula) forall containsComplementaryPair
+  def isFalse(and: Set[Expr]) = and.contains(Types.Const(false)) || containsComplementaryPair(and)
 
-  def isContraTautology(formula: Expr) = DnfConverter.convert(formula) forall containsComplementaryPair
+  def isTautology(formula: Expr) = formula :> Neg :> isContraTautology
 
-  def getPositiveValuations(formula: Expr) = None
+  def isContraTautology(formula: Expr) = DnfConverter.convert(formula.simplify) forall isFalse
 
-  def getNegativeValuations(formula: Expr) = None
+  def getPositiveValuations(formula: Expr) = DnfConverter.convert(formula.simplify) filterNot isFalse
 
-  def getHistoryGraph(formula: Expr) = formula :> DnfConverter.convert :> HistoryGraphFactory.create
+  def getNegativeValuations(formula: Expr) = formula :> Neg :> getPositiveValuations
+
+  def getHistoryGraph(formula: Expr) = formula.simplify :> DnfConverter.convert :> HistoryGraphFactory.create
 }

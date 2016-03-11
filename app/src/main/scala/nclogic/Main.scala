@@ -1,26 +1,23 @@
 package nclogic
 
-import nclogic.solver.DnfConverter
+import nclogic.model.DnfConverter
+import nclogic.parser.{Tokenizer, Parser}
 
 
 object Main extends App {
 
 
-  val line = "C(a)"
+  val line = "C(a & b) => C(a) & C(b)"
 
   val expr = for {
     tokens <- Tokenizer.tokenize(line)
     expr <- Parser.parse(tokens)
   } yield expr
 
-  
-  val dnf = DnfConverter.convert(expr.get.simplify)
 
+  val dnf = expr.get.simplify :> DnfConverter.convert
+  println(LncInferenceEngine.getPositiveValuations(expr.get))
+  println(LncInferenceEngine.getNegativeValuations(expr.get))
 
-  var current = HistoryGraphFactory.create(dnf).head.successors
-  for (i <-0 until 10) {
-    println(current.head)
-    current = current.head.successors
-  }
 }
 

@@ -1,7 +1,7 @@
-package nclogic.solver
+package nclogic.model
 
 import nclogic._
-import nclogic.model.Types.{Neg, Or, And, Expr}
+import nclogic.model.Types.{And, Expr, Neg, Or}
 
 object DnfConverter {
 
@@ -12,7 +12,7 @@ object DnfConverter {
     case And(es) => es.find(_.isInstanceOf[Or]) match {
       case Some(or@Or(ors)) =>
         val rest = es - or
-        Or(ors.map(a => convertExpr(And(rest + a)))).simplify
+        convertExpr(Or(ors.map(a => And(rest + a))).simplify)
       case _ => expr
     }
     // proceed conversion recursively

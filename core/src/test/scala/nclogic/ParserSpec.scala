@@ -1,8 +1,8 @@
-package pl.edu.pw.elka.madamek.nclogic
+package nclogic
 
+import nclogic.model.Types._
+import nclogic.parser.Parser
 import org.scalatest._
-import pl.edu.pw.elka.madamek.nclogic.model.Types._
-import Parser
 
 import scala.util.Success
 
@@ -56,7 +56,7 @@ class ParserSpec extends FlatSpec with Matchers {
 
   it should "return parse error on wrong input" in {
     Parser.parse(List("a", "<=>")) should be a 'failure
-    Parser.parse(List("A")) should be a 'failure
+    Parser.parse("A") should be a 'failure
   }
 
   it should "parse functors C, N and G" in {
