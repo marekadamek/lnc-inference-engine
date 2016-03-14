@@ -5,7 +5,7 @@ import nclogic.model.Types.{Expr, Neg}
 
 object LncInferenceEngine {
 
-  def containsComplementaryPair(elems: Set[Expr]): Boolean = {
+  private def containsComplementaryPair(elems: Set[Expr]): Boolean = {
     def containsComplementaryPair(elems: List[Expr]): Boolean = elems match {
       case Nil => false
       case p::ps =>
@@ -16,7 +16,7 @@ object LncInferenceEngine {
     containsComplementaryPair(elems.toList)
   }
 
-  def isFalse(and: Set[Expr]) = and.contains(Types.Const(false)) || containsComplementaryPair(and)
+  private def isFalse(and: Set[Expr]) = and.contains(Types.Const(false)) || containsComplementaryPair(and)
 
   def isTautology(formula: Expr) = formula :> Neg :> isContraTautology
 
@@ -26,5 +26,9 @@ object LncInferenceEngine {
 
   def getNegativeValuations(formula: Expr) = formula :> Neg :> getPositiveValuations
 
+  def getLazyHistoryGraph(formula: Expr) = formula.simplify :> DnfConverter.convert :> HistoryGraphFactory.create
+
   def getHistoryGraph(formula: Expr) = formula.simplify :> DnfConverter.convert :> HistoryGraphFactory.create
+
+
 }
