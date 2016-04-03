@@ -50,8 +50,8 @@ object LncInferenceEngine {
     case Neg(e) => extractVars(e)
     case N(e) => extractVars(e)
     case C(e) => extractVars(e)
-    case And(es) => es flatMap extractVars
-    case Or(es) => es flatMap extractVars
+    case And(e1, e2) => extractVars(e1) ++ extractVars(e2)
+    case Or(e1, e2) => extractVars(e1) ++ extractVars(e2)
     case _ => extractVars(expr.simplify)
   }
 

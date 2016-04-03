@@ -62,8 +62,8 @@ object Parser {
     handleOperator(EqToken, Eq,
       handleOperator(RImplToken, Impl,
         handleOperator(LImplToken, (p, q) => Impl(q, p),
-          handleOperator(OrToken, (p, q) => Or(Set(p, q)),
-            handleOperator(AndToken, (p, q) => And(Set(p, q)), {
+          handleOperator(OrToken, (p, q) => Or(p, q),
+            handleOperator(AndToken, (p, q) => And(p, q), {
               case (NegToken :: tail, map) => Neg(parseTokens(tail, map))
 
               case (ChangeToken :: ts :: Nil, map) =>

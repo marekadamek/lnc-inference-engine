@@ -1,21 +1,24 @@
 package nclogic
 
-import nclogic.model.DnfConverter
+import nclogic.model.Types.Var
+import nclogic.model.{CnfConverter, DnfConverter}
 import nclogic.parser.Parser
+import nclogic.sat.Sat
 import org.scalatest.{Matchers, FlatSpec}
 
 class DnfConverterSpec extends FlatSpec with Matchers {
 
   "DNF converter" should "work" in {
 
-    val formula = "(a | b | c) & (!a | e | f) & (g | h | i)"
+    val formula = "C(a | b)"
 
     for {
       expr <- Parser.parse(formula)
-      dnf = DnfConverter.convert(expr)
+      dnf = CnfConverter.convert(expr)
     } {
-      println(dnf)
-      println(dnf.size)
+      val graph = LncInferenceEngine.getHistoryGraph(expr)
+      graph foreach println
+      println(graph.getSuccessors(Set(Var("a"))))
     }
 
   }

@@ -1,33 +1,35 @@
 package nclogic.model
 
-import nclogic.model.Types.{And, Expr, Neg, Or}
-
+import nclogic._
+import nclogic.model.Types.{And, Expr, Or}
 
 object CnfConverter {
-  import nclogic._
+  type OrClause = Set[Expr]
+  type CNF = Set[OrClause]
 
-  def convert(expr: Expr): Set[Set[Expr]] = expr :> convertExpr :> makeSet :> simplify
+  def convert(expr: Expr): CNF = expr.simplify :> convertExpr :> makeSet
 
-  def convertExpr(expr: Expr): Expr = expr match {
-    // f((e1 | e2) | e) -> f(e1 | e) & f(e2 | e)
-    case Or(es) => es.find(_.isInstanceOf[And]) match {
-      case Some(and@And(ands)) =>
-        val rest = es.filterNot(_ == and)
-        convertExpr(And(ands.map(a => Or(rest + a))).simplify)
+  private def convertExpr(expr: Expr): Expr = {
+    //println(expr)
+    expr match {
+      // f((e1 | e2) & e) -> f(e1 & e) | f(e2 & e)
+      case Or(And(e1, e2), q) => And(Or(e1, q), Or(e2, q)) :> convertExpr
+      case Or(q, And(e1, e2)) => And(Or(q, e1), Or(q, e2)) :> convertExpr
+
+      case Or(e1, e2) =>
+        val converted = Or(convertExpr(e1), convertExpr(e2)).simplify
+        if (converted == expr) expr else convertExpr(converted)
+
+      // proceed conversion recursively
+      case And(e1, e2) => And(convertExpr(e1), convertExpr(e2)).simplify
       case _ => expr
     }
-    // proceed conversion recursively
-    case And(es) => And(es.map(convertExpr)).simplify
-    case _ => expr
   }
 
-  private def makeSet(expr: Expr): Set[Set[Expr]] = expr match {
-    case And(es) => es flatMap makeSet
-    case Or(es) => Set(es)
+  private def makeSet(expr: Expr): CNF = expr match {
+    case And(e1, e2) => makeSet(e1) ++ makeSet(e2)
+    case Or(e1, e2) => Set((makeSet(e1) ++ makeSet(e2)).flatten)
     case x: Expr => Set(Set(x))
   }
 
-  def simplify(sets: Set[Set[Expr]]) = {
-    sets.filterNot(s => s.exists(e1 => s.exists(e2 => e1 == Neg(e2).simplify)))
-  }
 }

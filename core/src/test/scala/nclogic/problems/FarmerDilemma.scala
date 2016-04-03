@@ -1,7 +1,7 @@
 package nclogic.problems
 
 import nclogic.LncInferenceEngine
-import nclogic.model.DnfConverter
+import nclogic.model.{CnfConverter, DnfConverter}
 import nclogic.parser.{Parser, FormulaReader}
 import org.scalatest.{Matchers, FlatSpec}
 
@@ -14,7 +14,8 @@ class FarmerDilemma extends FlatSpec with Matchers {
     val formula = FormulaReader.read(source)
 
     val expr = Parser.parse(formula)
-    val dnf = DnfConverter.convert(expr.get)
+    val dnf = CnfConverter.convert(expr.get)
+    //val dnf = DnfConverter.convert(expr.get)
     //val graph = LncInferenceEngine.getHistoryGraph(expr.get)
     println(dnf)
   }

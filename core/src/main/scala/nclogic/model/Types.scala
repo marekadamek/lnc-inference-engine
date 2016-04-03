@@ -6,68 +6,44 @@ object Types {
     def simplify: Expr
   }
 
+  private def areContradictory(e1: Expr, e2: Expr) = e1 == Neg(e2) || Neg(e1) == e2
+
   case class And(e1: Expr, e2: Expr) extends Expr {
-    override def toString = {
-      val result = s"${es.map(_.toString).mkString(" & ")}"
-      if (es.size == 1) result else s"($result)"
-    }
+    override def toString = s"($e1 & $e2)"
 
-    def simplify: Expr = es match {
-      case x if x.contains(Const(false)) => Const(false)
-      case x if x.exists(e1 => x.exists(e2 => e1 == Neg(e2) || e2 == Neg(e1))) => Const(false)
-      case _ =>
-        val simplified = es
-          .flatMap {
-            case And(x) => x
-            case x => Set(x)
-          }
-          .map {
-            _.simplify
-          }
-
-        if (es == simplified)
-          this
-        else
-          And(simplified).simplify
+    def simplify: Expr = (e1, e2) match {
+      case (Const(false), _) => Const(false)
+      case (_, Const(false)) => Const(false)
+      case (Const(true), _) => e2
+      case (_, Const(true)) => e1
+      case (a, b) if areContradictory(a, b) => Const(false)
+      case _ => And(e1.simplify, e2.simplify)
     }
   }
 
-  case class Or(es: Set[Expr]) extends Expr {
-    override def toString = {
-      val result = s"${es.map(_.toString).mkString(" | ")}"
-      if (es.size == 1) result else s"($result)"
-    }
+  case class Or(e1: Expr, e2: Expr) extends Expr {
+    override def toString = s"($e1 | $e2)"
 
-    def simplify: Expr = es match {
-      case x if x.contains(Const(true)) => Const(true)
-      case x if x.exists(e1 => x.exists(e2 => e1 == Neg(e2) || e2 == Neg(e1))) => Const(true)
-      case _ =>
-        val simplified = es
-          .flatMap {
-            case Or(x) => x
-            case x => Set(x)
-          }
-          .map {
-            _.simplify
-          }
-
-        if (es == simplified)
-          this
-        else
-          Or(simplified).simplify
+    def simplify: Expr = (e1, e2) match {
+      case (Const(true), _) => Const(true)
+      case (_, Const(true)) => Const(true)
+      case (Const(false), _) => e2
+      case (_, Const(false)) => e1
+      case (a, b) if areContradictory(a, b) => Const(true)
+      case _ => Or(e1.simplify, e2.simplify)
     }
   }
 
   case class Impl(t1: Expr, t2: Expr) extends Expr {
     override def toString = s"${t1.toString} => ${t2.toString}"
 
-    def simplify = Or(Set(Neg(t1), t2)).simplify
+    def simplify = Or(Neg(t1), t2).simplify
   }
 
   case class Eq(e1: Expr, e2: Expr) extends Expr {
     override def toString = s"$e1 <=> $e2"
 
-    def simplify = And(Set(Impl(e1, e2), Impl(e2, e1))).simplify
+    def simplify = Or(And(e1, e2), And(Neg(e1), Neg(e2))).simplify
 
     override def equals(any: Any) = any match {
       case o: Eq => Set(e1, e2) == Set(o.e1, o.e2)
@@ -92,8 +68,8 @@ object Types {
      * N(a <=> b) <=> N(a) <=> N(b)
      */
     def simplify: Expr = e match {
-      case Or(es) => Or(es map N).simplify
-      case And(es) => And(es map N).simplify
+      case Or(e1, e2) => Or(N(e1), N(e2)).simplify
+      case And(e1, e2)=> And(N(e1), N(e2)).simplify
       case Impl(p, q) => Impl(N(p), N(q)).simplify
       case Eq(p, q) => Eq(N(p), N(q)).simplify
       case _ => N(e.simplify)
@@ -107,8 +83,8 @@ object Types {
       case Const(b) => Const(!b)
       case Var(_) => this
       case Neg(x) => x.simplify
-      case And(es) => Or(es map Neg).simplify
-      case Or(es) => And(es map Neg).simplify
+      case And(e1, e2) => Or(Neg(e1), Neg(e2)).simplify
+      case Or(e1, e2) => And(Neg(e1), Neg(e2)).simplify
       case N(x) => N(Neg(x)).simplify
       case _ =>
         val simplified = e.simplify

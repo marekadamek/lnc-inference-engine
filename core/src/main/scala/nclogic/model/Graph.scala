@@ -1,8 +1,8 @@
 package nclogic.model
 
-import nclogic.LncInferenceEngine
-import nclogic.model.DnfConverter.{AndClause, DNF}
+import nclogic.model.DnfConverter.AndClause
 import nclogic.model.Types._
+import nclogic.sat.Sat
 
 trait Graph[T] extends Traversable[T] {
   def nodes: Set[T]
@@ -48,21 +48,23 @@ trait Graph[T] extends Traversable[T] {
 //}
 
 case class HistoryGraph(protected val formula: Expr) extends Graph[AndClause] {
-  private val dnf = DnfConverter.convert(formula)
-  lazy val nodes = LncInferenceEngine.getPositiveValuations(formula)
+  private val valuations = Sat.solve(CnfConverter.convert(formula))
+  val pairs = for {
+    i <- List(0)
+    v <- valuations
+  } yield {
+      val from = getElementsFromLevel(v, i)
+      val to = getElementsFromLevel(v, i + 1)
+      from -> to
+    }
 
-  def getSuccessors(and: AndClause) = {
-    val x = dnf.filterNot(c => c.exists(e1 => and.exists(e2 => e1 == Neg(e2).simplify)))
-    val nextStates = dnf
-      .filterNot(c => c.exists(e1 => and.exists(e2 => e1 == Neg(e2).simplify)))
-      .map(nextStep)
+  lazy val nodes = pairs.map(_._1).toSet
 
-    nodes.filter(n => nextStates.exists(ns => (ns & n) == ns) && n != and)
+  def getElementsFromLevel(valuation: AndClause, level: Int): AndClause = level match {
+    case 0 => valuation.filterNot(_.isInstanceOf[N])
+    case _ => getElementsFromLevel(valuation.filter(_.isInstanceOf[N]).map(_.asInstanceOf[N].e), level - 1)
   }
 
-  private def nextStep(state: AndClause): AndClause = {
-    val ns = state.filter(_.isInstanceOf[N]).map(_.asInstanceOf[N])
-    (state--ns).filterNot(e => ns.exists(n => n == N(e) || n == N(Neg(e).simplify))) ++ ns.map(_.e)
-  }
+  def getSuccessors(node: AndClause) = pairs.filter(_._1 == node).map(_._2).toSet
 
 }
