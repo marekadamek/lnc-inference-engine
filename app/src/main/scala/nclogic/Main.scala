@@ -1,13 +1,13 @@
 package nclogic
 
 import nclogic.model.DnfConverter
-import nclogic.parser.{Tokenizer, Parser}
+import nclogic.parser.{Parser, Tokenizer}
 
 
 object Main extends App {
 
 
-  val line = "C(a & b) => C(a) & C(b)"
+  val line = "!C(a)"
 
   val expr = for {
     tokens <- Tokenizer.tokenize(line)
@@ -16,8 +16,19 @@ object Main extends App {
 
 
   val dnf = expr.get.simplify :> DnfConverter.convert
-  println(LncInferenceEngine.getPositiveValuations(expr.get))
-  println(LncInferenceEngine.getNegativeValuations(expr.get))
+
+  println(line)
+
+  LncInferenceEngine.getHistoryGraph(expr.get) :> println
+
+  LncInferenceEngine.getPositiveValuations(expr.get) :> println
+  LncInferenceEngine.getNegativeValuations(expr.get) :> println
+
+  LncInferenceEngine.isTautology(expr.get) :> println
+  LncInferenceEngine.isContraTautology(expr.get) :> println
+  //LncInferenceEngine.getPositiveValuations(expr.get) :> println
+  //LncInferenceEngine.getNegativeValuations(expr.get) :> println
+
 
 }
 

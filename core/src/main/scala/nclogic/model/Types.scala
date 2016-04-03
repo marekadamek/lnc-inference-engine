@@ -6,54 +6,66 @@ object Types {
     def simplify: Expr
   }
 
-  case class And(es: Set[Expr]) extends Expr {
-    override def toString = s"(${es.map(_.toString).mkString(" & ")})"
+  case class And(e1: Expr, e2: Expr) extends Expr {
+    override def toString = {
+      val result = s"${es.map(_.toString).mkString(" & ")}"
+      if (es.size == 1) result else s"($result)"
+    }
 
-    def simplify: Expr = {
-      val simplified = es
-        .flatMap {
-          case And(x) => x
-          case x => Set(x)
-        }
-        .map {
-          _.simplify
-        }
+    def simplify: Expr = es match {
+      case x if x.contains(Const(false)) => Const(false)
+      case x if x.exists(e1 => x.exists(e2 => e1 == Neg(e2) || e2 == Neg(e1))) => Const(false)
+      case _ =>
+        val simplified = es
+          .flatMap {
+            case And(x) => x
+            case x => Set(x)
+          }
+          .map {
+            _.simplify
+          }
 
-      if (es == simplified)
-        this
-      else
-        And(simplified).simplify
+        if (es == simplified)
+          this
+        else
+          And(simplified).simplify
     }
   }
 
   case class Or(es: Set[Expr]) extends Expr {
-    override def toString = s"(${es.map(_.toString).mkString(" | ")})"
+    override def toString = {
+      val result = s"${es.map(_.toString).mkString(" | ")}"
+      if (es.size == 1) result else s"($result)"
+    }
 
-    def simplify: Expr = {
-      val simplified = es
-        .flatMap {
-          case Or(x) => x
-          case x => Set(x)
-        }
-        .map {
-          _.simplify
-        }
+    def simplify: Expr = es match {
+      case x if x.contains(Const(true)) => Const(true)
+      case x if x.exists(e1 => x.exists(e2 => e1 == Neg(e2) || e2 == Neg(e1))) => Const(true)
+      case _ =>
+        val simplified = es
+          .flatMap {
+            case Or(x) => x
+            case x => Set(x)
+          }
+          .map {
+            _.simplify
+          }
 
-      if (es == simplified)
-        this
-      else
-        Or(simplified).simplify
+        if (es == simplified)
+          this
+        else
+          Or(simplified).simplify
     }
   }
 
   case class Impl(t1: Expr, t2: Expr) extends Expr {
-    override def toString = s"(${t1.toString} => ${t2.toString})"
+    override def toString = s"${t1.toString} => ${t2.toString}"
 
     def simplify = Or(Set(Neg(t1), t2)).simplify
   }
 
   case class Eq(e1: Expr, e2: Expr) extends Expr {
-    override def toString = s"($e1 <=> $e2)"
+    override def toString = s"$e1 <=> $e2"
 
     def simplify = And(Set(Impl(e1, e2), Impl(e2, e1))).simplify
 
