@@ -9,7 +9,7 @@ class DnfConverterSpec extends FlatSpec with Matchers {
 
   "DNF converter" should "work" in {
 
-    val formula = "C(a | b)"
+    val formula = "C(a)"
 
     for {
       expr <- Parser.parse(formula)

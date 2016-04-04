@@ -1,6 +1,6 @@
 package nclogic
 
-import nclogic.parser.{Tokenizer, Parser}
+import nclogic.parser.{Parser, Tokenizer}
 import org.scalatest._
 
 class LncTautologySpec extends FlatSpec with Matchers {

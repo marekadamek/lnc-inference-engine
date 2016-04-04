@@ -30,11 +30,18 @@ case class HistoryGraph(protected val formula: Expr) extends Graph[AndClause] {
     case _ => getElementsFromLevel(valuation.filter(_.isInstanceOf[N]).map(_.asInstanceOf[N].e), level - 1)
   }
 
-  def getSuccessors(clause: AndClause) =
+  def getSuccessors(clause: AndClause) = {
     pairs
       .filter(p => p._1 forall clause.contains)
       .map(_._2)
       .map(to => clause -- to.map(Neg).map(_.simplify) ++ to)
       .toSet
+
+      .filter(to => nodes.exists(_ forall to.contains))
+  }
+
+  override def toString(): String = {
+    pairs map { case (k, v) => k + " -> " + v } mkString "\n"
+  }
 
 }
