@@ -7,7 +7,7 @@ import nclogic._
 /**
  * E -> T | F | Var | !a | (E) | E OP E | Fun(E)
  * Var -> (a-z)+
- * Fun -> C | N | G
+ * Fun -> C | N
  * OP -> & | '|' | => | <=>
  */
 

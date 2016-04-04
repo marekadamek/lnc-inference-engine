@@ -1,8 +1,9 @@
 package nclogic
 
 import nclogic.model.DnfConverter.AndClause
-import nclogic.model.{HistoryGraph, HistoryGraphFactory, DnfConverter, Types}
+import nclogic.model._
 import nclogic.model.Types._
+import nclogic.sat.Sat
 
 object LncInferenceEngine {
 
@@ -21,6 +22,7 @@ object LncInferenceEngine {
 
   def isTautology(formula: Expr) = getNegativeValuations(formula).isEmpty
 
+  @Deprecated
   def isContraTautology(formula: Expr) = DnfConverter.convert(formula.simplify) forall isFalse
 
   def getPositiveValuations(formula: Expr) = filterPositiveValuations(formula, generateValuations(formula))
@@ -33,14 +35,10 @@ object LncInferenceEngine {
   def getHistoryGraph(formula: Expr) = HistoryGraph(formula)
 
   private def filterPositiveValuations(formula: Expr, valuations: Set[Set[Expr]]): Set[Set[Expr]] = {
-    val dnf = DnfConverter.convert(formula.simplify) filterNot isFalse
-    valuations filterNot { vars =>
-      dnf forall { clause =>
-        vars exists { v =>
-          clause exists { e =>
-            v == Neg(e).simplify
-          }
-        }
+    val nodes = HistoryGraph(formula).nodes
+    valuations filter { vars =>
+      nodes exists {
+        _ forall vars.contains
       }
     }
   }

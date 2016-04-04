@@ -1,9 +1,8 @@
 package nclogic
 
-import nclogic.model.Types.Var
+import nclogic.model.Types.{Neg, Var}
 import nclogic.model.{CnfConverter, DnfConverter}
 import nclogic.parser.Parser
-import nclogic.sat.Sat
 import org.scalatest.{Matchers, FlatSpec}
 
 class DnfConverterSpec extends FlatSpec with Matchers {
@@ -17,8 +16,8 @@ class DnfConverterSpec extends FlatSpec with Matchers {
       dnf = CnfConverter.convert(expr)
     } {
       val graph = LncInferenceEngine.getHistoryGraph(expr)
-      graph foreach println
-      println(graph.getSuccessors(Set(Var("a"))))
+      graph.getSuccessors(Set(Neg(Var("a")), Neg(Var("b")))) :> println
+      println(graph.pairs)
     }
 
   }
