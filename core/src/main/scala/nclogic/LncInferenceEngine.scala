@@ -5,6 +5,15 @@ import nclogic.model._
 import nclogic.model.Types._
 import nclogic.sat.Sat
 
+//trait LncInferenceEngine {
+//
+//  def isTautology(e: Expr): Boolean
+//
+//  def isContraTautology(e: Expr): Boolean
+//
+//  def isTrue(formula: Expr, statement: Expr)
+//}
+
 object LncInferenceEngine {
 
   private def containsComplementaryPair(elems: Set[Expr]): Boolean = {

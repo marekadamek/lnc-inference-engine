@@ -1,24 +1,34 @@
 import nclogic.LncInferenceEngine;
-import nclogic.model.CnfConverter;
 import nclogic.model.DnfConverter;
-import nclogic.model.Graph;
+import nclogic.model.HistoryGraph;
 import nclogic.model.Types;
+import nclogic.parser.FormulaReader;
 import nclogic.parser.Parser;
+import scala.collection.Iterator;
+import scala.collection.immutable.List;
 import scala.collection.immutable.Set;
+import scala.io.Codec;
+import scala.io.Source;
+import scala.util.Try;
 
 public class Main {
 
     public static void main(String[] args) {
-        String formula =
-                "(a => N(b & !a)) " +
-                "& (b => N(c & !b)) " +
-                "& (c => N(d & !c)) " +
-                "& ((a & !b & !c & !d) | (!a & b & !c & !d) | (!a & !b & c & !d) | (!a & !b & !c & d))";
-        Types.Expr expr = Parser.parse(formula).get();
-        Graph<Set<Types.Expr>> historyGraph = LncInferenceEngine.getHistoryGraph(expr);
-        Set<Types.Expr> clause = DnfConverter.convert(Parser.parse("a & !b & !c & !d").get()).head();
-        Set<? extends Set<Types.Expr>> successors = historyGraph.getSuccessors(clause);
-        System.out.println(historyGraph);
-        System.out.println(successors);
+        String file = "/farmerDilemma.txt";
+        String line = FormulaReader.read(Source.fromURL(Main.class.getResource(file), Codec.UTF8()));
+        //val line = "(a | b) & (c | d)"
+        Try<Types.Expr> formula = Parser.parse(line);
+        HistoryGraph graph = LncInferenceEngine.getHistoryGraph(formula.get());
+
+
+        Set<Types.Expr> from = DnfConverter.convert(Parser.parse("!bc & !bf & !bs & !bw & !rc & !rf & !rs & !rw").get()).head();
+        Set<Types.Expr> to = DnfConverter.convert(Parser.parse("!bc & !bf & !bs & !bw & rc & rf & rs & rw").get()).head();
+
+
+        List<Set<Types.Expr>> path = graph.findPath(from, to);
+        Iterator<Set<Types.Expr>> it = path.iterator();
+        while (it.hasNext()) {
+            System.out.println(it.next());
+        }
     }
 }

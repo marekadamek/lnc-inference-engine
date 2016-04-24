@@ -1,0 +1,4 @@
+#Implication
+
+(a => N(b))
+& (b => N(c))

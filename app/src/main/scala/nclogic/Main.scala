@@ -1,34 +1,31 @@
 package nclogic
 
 import nclogic.model.DnfConverter
-import nclogic.parser.{Parser, Tokenizer}
+import nclogic.parser.{FormulaReader, Parser}
+
+import scala.io.Source
 
 
 object Main extends App {
 
-
-  val line = "!C(a)"
-
-  val expr = for {
-    tokens <- Tokenizer.tokenize(line)
-    expr <- Parser.parse(tokens)
-  } yield expr
+  val file = "/implication.txt"
+  val line = FormulaReader.read(Source.fromURL(getClass.getResource(file)))
+  //val line = "(a | b) & (c | d)"
+  val formula = Parser.parse(line)
+  val g = LncInferenceEngine.getHistoryGraph(formula.get)
 
 
-  val dnf = expr.get.simplify :> DnfConverter.convert
+  //val from = DnfConverter.convert(Parser.parse("!bc & !bf & !bs & !bw & !rc & !rf & !rs & !rw").get).head
+  //val to = DnfConverter.convert(Parser.parse("!bc & !bf & !bs & !bw & rc & rf & rs & rw").get).head
 
-  println(line)
+  val from = DnfConverter.convert(Parser.parse("a & !b & !c").get).head
+  val to = DnfConverter.convert(Parser.parse("c").get).head
 
-  LncInferenceEngine.getHistoryGraph(expr.get) :> println
 
-  LncInferenceEngine.getPositiveValuations(expr.get) :> println
-  LncInferenceEngine.getNegativeValuations(expr.get) :> println
-
-  LncInferenceEngine.isTautology(expr.get) :> println
-  LncInferenceEngine.isContraTautology(expr.get) :> println
-  //LncInferenceEngine.getPositiveValuations(expr.get) :> println
-  //LncInferenceEngine.getNegativeValuations(expr.get) :> println
-
+  val b = g.findPath(from, to)
+  for (s <- b) {
+    println(s)
+  }
 
 }
 

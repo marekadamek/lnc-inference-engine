@@ -85,7 +85,7 @@ object Types {
       case Neg(x) => x.simplify
       case And(e1, e2) => Or(Neg(e1), Neg(e2)).simplify
       case Or(e1, e2) => And(Neg(e1), Neg(e2)).simplify
-      case N(x) => N(Neg(x)).simplify
+      //case N(x) => N(Neg(x)).simplify
       case _ =>
         val simplified = e.simplify
         if (simplified == e) this else Neg(simplified).simplify
