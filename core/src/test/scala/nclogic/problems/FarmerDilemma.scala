@@ -1,22 +1,24 @@
 package nclogic.problems
 
 import nclogic.LncInferenceEngine
-import nclogic.model.{CnfConverter, DnfConverter}
+import nclogic.model.{HistoryGraph, CnfConverter, DnfConverter}
 import nclogic.parser.{Parser, FormulaReader}
 import org.scalatest.{Matchers, FlatSpec}
 
-import scala.io.Source
+import scala.io.{Codec, Source}
 
 class FarmerDilemma extends FlatSpec with Matchers {
 
   "LNC Inference engine" should "solve farmer dilemma" in {
     val source = Source.fromURL(getClass.getResource("/problems/farmerDilemma.txt"))
-    val formula = FormulaReader.read(source)
+    val formula = Parser.parse(FormulaReader.read(source))
+    val graph = LncInferenceEngine.getHistoryGraph(formula.get)
 
-    val expr = Parser.parse(formula)
-    val dnf = CnfConverter.convert(expr.get)
-    //val dnf = DnfConverter.convert(expr.get)
-    //val graph = LncInferenceEngine.getHistoryGraph(expr.get)
-    println(dnf)
+    val from = DnfConverter.convert(Parser.parse("!bc & !bf & !bs & !bw & !rc & !rf & !rs & !rw").get).head
+    val to = DnfConverter.convert(Parser.parse("!bc & !bf & !bs & !bw & rc & rf & rs & rw").get).head
+
+    val path = graph.findPath(from, to)
+
+    path.isEmpty shouldEqual false
   }
 }

@@ -2,15 +2,15 @@ package nclogic.sat
 
 import nclogic.model.CnfConverter.CNF
 import nclogic.model.DnfConverter.{AndClause, DNF}
-import nclogic.model.Types.{Neg, Expr}
+import nclogic.model.Types.{Const, Neg, Expr}
 
 object Sat {
 
-  def isContradictory(andList: Set[Set[Expr]]) = {
+  private def isContradictory(andList: Set[Set[Expr]]) = {
     if (andList.exists(_.isEmpty)) true
     else {
       val singles = andList.filter(_.size == 1).map(_.head)
-      singles.exists(e => singles.contains(Neg(e)))
+      singles.contains(Const(false)) || singles.exists(e => singles.contains(Neg(e)))
     }
   }
 

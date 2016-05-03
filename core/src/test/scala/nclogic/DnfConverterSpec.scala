@@ -1,37 +1,33 @@
 package nclogic
 
-import nclogic.model.Types.{Neg, Var}
-import nclogic.model.{CnfConverter, DnfConverter}
+import nclogic.model.CnfConverter
+import nclogic.model.Types.Var
 import nclogic.parser.Parser
-import org.scalatest.{Matchers, FlatSpec}
+import org.scalatest.{FlatSpec, Matchers}
 
 class DnfConverterSpec extends FlatSpec with Matchers {
 
-  "DNF converter" should "work" in {
+  "CNF converter (a & b) | (c & d)" should "work" in {
 
-    val formula = "C(a)"
+    val formula = "(a & b) | (c & d)"
 
     for {
       expr <- Parser.parse(formula)
-      dnf = CnfConverter.convert(expr)
+      cnf = CnfConverter.convert(expr)
     } {
-      val graph = LncInferenceEngine.getHistoryGraph(expr)
-      graph.getSuccessors(Set(Neg(Var("a")), Neg(Var("b")))) :> println
-      println(graph.pairs)
+      cnf shouldEqual Set(Set(Var("a"), Var("c")), Set(Var("a"), Var("d")), Set(Var("b"), Var("c")), Set(Var("b"), Var("d")))
     }
-
   }
 
-  "DNF converter" should " test 2" in {
+  "CNF converter (a & b) | (c | d)" should "work" in {
 
-    val formula = "(a | b | c) & (d | e | f) & (g | h | i)"
+    val formula = "(a & b) | (c | d)"
 
     for {
       expr <- Parser.parse(formula)
-      dnf = DnfConverter.convert(expr)
+      cnf = CnfConverter.convert(expr)
     } {
-      println(dnf)
+      cnf shouldEqual Set(Set(Var("a"), Var("c"), Var("d")), Set(Var("b"), Var("c"), Var("d")))
     }
-
   }
 }

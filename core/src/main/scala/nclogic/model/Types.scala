@@ -14,10 +14,18 @@ object Types {
     def simplify: Expr = (e1, e2) match {
       case (Const(false), _) => Const(false)
       case (_, Const(false)) => Const(false)
-      case (Const(true), _) => e2
-      case (_, Const(true)) => e1
+      case (Const(true), _) => e2.simplify
+      case (_, Const(true)) => e1.simplify
       case (a, b) if areContradictory(a, b) => Const(false)
-      case _ => And(e1.simplify, e2.simplify)
+      case _ =>
+        val (es1, es2) = (e1.simplify, e2.simplify)
+        if (es1 == e1 && es2 == e2) this
+        else And(es1, es2).simplify
+    }
+
+    override def equals(any: Any) = any match {
+      case o: And => Set(e1, e2) == Set(o.e1, o.e2)
+      case _ => false
     }
   }
 
@@ -27,10 +35,18 @@ object Types {
     def simplify: Expr = (e1, e2) match {
       case (Const(true), _) => Const(true)
       case (_, Const(true)) => Const(true)
-      case (Const(false), _) => e2
-      case (_, Const(false)) => e1
+      case (Const(false), _) => e2.simplify
+      case (_, Const(false)) => e1.simplify
       case (a, b) if areContradictory(a, b) => Const(true)
-      case _ => Or(e1.simplify, e2.simplify)
+      case _ =>
+        val (es1, es2) = (e1.simplify, e2.simplify)
+        if (es1 == e1 && es2 == e2) this
+        else Or(es1, es2).simplify
+    }
+
+    override def equals(any: Any) = any match {
+      case o: Or => Set(e1, e2) == Set(o.e1, o.e2)
+      case _ => false
     }
   }
 
@@ -66,12 +82,14 @@ object Types {
      * N(a & b) <=> N(a) & N(b)
      * N(a => b) <=> N(a) => N(b)
      * N(a <=> b) <=> N(a) <=> N(b)
+     * N(!a) <=> !N(a)
      */
     def simplify: Expr = e match {
       case Or(e1, e2) => Or(N(e1), N(e2)).simplify
       case And(e1, e2)=> And(N(e1), N(e2)).simplify
       case Impl(p, q) => Impl(N(p), N(q)).simplify
       case Eq(p, q) => Eq(N(p), N(q)).simplify
+      case Neg(e1) => Neg(N(e1)).simplify
       case _ => N(e.simplify)
     }
   }
@@ -85,7 +103,6 @@ object Types {
       case Neg(x) => x.simplify
       case And(e1, e2) => Or(Neg(e1), Neg(e2)).simplify
       case Or(e1, e2) => And(Neg(e1), Neg(e2)).simplify
-      //case N(x) => N(Neg(x)).simplify
       case _ =>
         val simplified = e.simplify
         if (simplified == e) this else Neg(simplified).simplify

@@ -1,5 +1,5 @@
 #Implication
 
 a
-& a => b
-& b => c
+& a => N(b)
+& b => N(c)
