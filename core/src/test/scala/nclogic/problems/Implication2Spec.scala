@@ -9,10 +9,10 @@ import org.scalatest.{FlatSpec, Matchers}
 
 import scala.io.Source
 
-class ImplicationSpec extends FlatSpec with Matchers {
+class Implication2Spec extends FlatSpec with Matchers {
 
-  "LNC Inference engine" should "solve simple implication example" in {
-    val source = Source.fromURL(getClass.getResource("/problems/implication.txt"))
+  "LNC Inference engine" should "solve simple implication example 2" in {
+    val source = Source.fromURL(getClass.getResource("/problems/implication2.txt"))
     val formula = Parser.parse(FormulaReader.read(source))
     val graph = LncInferenceEngine.getHistoryGraph(formula.get)
 
@@ -20,12 +20,6 @@ class ImplicationSpec extends FlatSpec with Matchers {
     val to = DnfConverter.convert(Parser.parse("c").get).head
 
     val path = graph.findPath(from, to)
-
-    path shouldEqual List(
-      Set(Var("a"), Neg(Var("b")), Neg(Var("c"))),
-      Set(Var("a"), Var("b"), Neg(Var("c"))),
-      Set(Var("a"), Var("b"), Var("c"))
-    )
 
     PrettyPrintUtil.printPath(path)
   }

@@ -1,0 +1,5 @@
+# Example 3
+
+(a => N(aa))
+& (b => N(bb))
+& ((aa | bb) => N(c & !b))

@@ -1,5 +1,4 @@
-#Implication
+# Example 1
 
-a
-& a => N(b)
-& b => N(c)
+(a => N(b))
+& (b => N(c))

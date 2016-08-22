@@ -25,6 +25,14 @@ public class Main {
         Set<Types.Expr> to = DnfConverter.convert(Parser.parse("!bc & !bf & !bs & !bw & rc & rf & rs & rw").get()).head();
 
 
+        List<Set<Types.Expr>> successors = graph.getSuccessors(from).toList();
+        for (int i = 0; i < successors.size(); ++i) {
+            List<Types.Expr> suc = successors.apply(i).toList();
+            for (int j = 0; j < successors.size(); ++j) {
+                Types.Expr e = suc.apply(j);
+                String s = e.toString();
+            }
+        }
         List<Set<Types.Expr>> path = graph.findPath(from, to);
         Iterator<Set<Types.Expr>> it = path.iterator();
         while (it.hasNext()) {

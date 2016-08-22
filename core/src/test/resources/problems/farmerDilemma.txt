@@ -1,10 +1,23 @@
 #FARMER DILEMMA
 
-C(bf) 
-& (!bf => C(rf)) 
+# F - farmer
+# W - wolf
+# S - sheep
+# C - cabbage
+
+# B - boat (1 - inside, 0 - outside)
+# R - river (1 - right, 0 - left)
+
+# BF, RF - farmer
+# BW, RW - wolf
+# BS, RS - sheep
+# BC, RC - cabbage
+
+C(bf)
+& (!bf => C(rf))
 & (bf => !C(rf))
 & (bw => bf & (rw <=> rf))
-& (bw => !C(rw)) 
+& (bw => !C(rw))
 & (C(rw) => C(rf) & (rw <=> rf))
 & (C(rw) => !bw & C(bw))
 & (C(bw) => (bw <=> bf)
