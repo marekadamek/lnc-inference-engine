@@ -2,7 +2,7 @@ package nclogic.sat
 
 import nclogic.model.CnfConverter.CNF
 import nclogic.model.DnfConverter.{AndClause, DNF}
-import nclogic.model.Types.{Const, Neg, Expr}
+import nclogic.model.Types.{Const, Expr, Neg}
 
 object Sat {
 
