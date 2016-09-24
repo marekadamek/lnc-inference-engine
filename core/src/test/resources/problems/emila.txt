@@ -1,0 +1,12 @@
+#FARMER DILEMMA
+
+# p - in prison
+# da - dragon attacked
+# ao -annihilation order
+# ad - attack the dragon
+# rip - player dead
+
+(p & !da => N(da & p))
+& (p & da & !ad => N(!p & !da & !ao & !ad & !rip))
+& (da & ad => N(rip))
+& (!p => N(ao))
