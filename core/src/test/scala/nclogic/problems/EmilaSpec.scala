@@ -1,8 +1,7 @@
 package nclogic.problems
 
 import nclogic.LncInferenceEngine
-import nclogic.model.DnfConverter
-import nclogic.model.Types.{Neg, Var}
+import nclogic.model.{DnfConverter, HistoryGraph}
 import nclogic.parser.{FormulaReader, Parser}
 import nclogic.utils.PrettyPrintUtil
 import org.scalatest.{FlatSpec, Matchers}
@@ -16,15 +15,34 @@ class EmilaSpec extends FlatSpec with Matchers {
     val formula = Parser.parse(FormulaReader.read(source))
     val graph = LncInferenceEngine.getHistoryGraph(formula.get)
 
-    val initialDoNotAttack = DnfConverter.convert(Parser.parse("p & !da & !ao & !ad & !rip").get).head
-    val toAnnihilationOrder = DnfConverter.convert(Parser.parse("ao").get).head
+    val humansEndingKillTribe = "inprison & !dragon & killtribe & !attack & !hassword & !firstao & !secondao & !monks & !dead & !village & !battle & joinhumans & !endelves & !endhumans & !enddragon"
+    val elvesEndingGetSword = "inprison & !dragon & !killtribe & !attack & !hassword & !firstao & !secondao & !monks & !dead & !village & !battle & !joinhumans & !endelves & !endhumans & !enddragon"
+    val getKilledByDragon = "inprison & !dragon & !killtribe & attack & !hassword & !firstao & !secondao & !monks & !dead & !village & !battle & !joinhumans & !endelves & !endhumans & !enddragon"
+    //tutaj stan poczatkowy to ten z mnichami
+    val killTheDragon = "!inprison & !dragon & !killtribe & attack & hassword & firstao & secondao & monks & !dead & !village & !battle & !joinhumans & !endelves & !endhumans & !enddragon"
 
-    val initialAttack = DnfConverter.convert(Parser.parse("p & !da & !ao & ad & !rip").get).head
-    val toDead = DnfConverter.convert(Parser.parse("rip").get).head
+    testPath(graph, humansEndingKillTribe, "endhumans & !hassword")
+    testPath(graph, elvesEndingGetSword, "endelves & hassword")
+    testPath(graph, getKilledByDragon, "dead")
+    testPath(graph, killTheDragon, "enddragon")
 
+  }
 
-    PrettyPrintUtil.printPath(graph.findPath(initialDoNotAttack, toAnnihilationOrder))
+  private def testPath(graph: HistoryGraph, from: String, to: String): Unit = {
+    println("Testing for:")
+    println("From: " + from)
+    println("To: " + to)
+
+    val initialDoNotAttack = DnfConverter.convert(Parser.parse(from).get).head
+    val toAnnihilationOrder = DnfConverter.convert(Parser.parse(to).get).head
+
     println()
-    PrettyPrintUtil.printPath(graph.findPath(initialAttack, toDead))
+
+    val path = graph.findPath(initialDoNotAttack, toAnnihilationOrder)
+    if (path.isEmpty) println("Path not found :(")
+    else PrettyPrintUtil.printPath(graph.findPath(initialDoNotAttack, toAnnihilationOrder))
+
+    println()
+    println()
   }
 }

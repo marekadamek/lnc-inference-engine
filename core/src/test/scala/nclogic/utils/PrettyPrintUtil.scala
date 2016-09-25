@@ -9,7 +9,7 @@ object PrettyPrintUtil {
 
   def printPath(path: List[DnfConverter.AndClause]): Unit = {
     path.foreach(and => println(and
-        //.filterNot(_.isInstanceOf[Neg])
+        .filterNot(_.isInstanceOf[Neg])
         .toList
         .sortBy({
           case Neg(Var(name)) => name

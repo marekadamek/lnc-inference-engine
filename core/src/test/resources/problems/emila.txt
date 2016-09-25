@@ -1,12 +1,51 @@
-#FARMER DILEMMA
+# Mini Skyrim
 
-# p - in prison
-# da - dragon attacked
-# ao -annihilation order
-# ad - attack the dragon
-# rip - player dead
+# inprison
+# dragon
+# attack
+# hassword
+# firstao
+# secondao
+# monks
+# dead
+# village
+# joinhumans
+# killtribe
+# endelves
+# endhumans
+# enddragon
 
-(p & !da => N(da & p))
-& (p & da & !ad => N(!p & !da & !ao & !ad & !rip))
-& (da & ad => N(rip))
-& (!p => N(ao))
+# Reguły na śmierć
+(dragon & attack & !hassword => N(dead))
+& (dragon & attack & hassword => N(enddragon))
+
+# 2 pierwsze przyloty smoka
+& ((inprison | monks) & !dragon => N(dragon))
+
+# po ataku dragon ucieka
+& (dragon => N(!dragon))
+
+# Ucieczka z więzienia
+& (inprison & dragon => N(!inprison))
+
+# first annihilation order
+& (!inprison & !dragon & !firstao => N(firstao))
+
+# zabij plemie
+& (firstao & killtribe => N(secondao))
+
+# nie zabijaj plemienia
+& (firstao & !killtribe => N(hassword))
+
+# idz do mnichow
+& (secondao | hassword => N(monks))
+
+# 2 atak smoka
+& (monks & dragon & !attack => N(village))
+
+# rozgalezienie w wiosce
+& (village => N((battle & !dragon) | (!battle & dragon)))
+
+# wybor strony
+& (battle & !joinhumans => N(endelves))
+& (battle & joinhumans => N(endhumans))
