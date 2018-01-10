@@ -1,9 +1,9 @@
 package nclogic.problems
 
 import nclogic.LncInferenceEngine
-import nclogic.model.{DnfConverter, HistoryGraph}
+import nclogic.model.HistoryGraph
+import nclogic.model.converters.DnfConverter
 import nclogic.parser.{FormulaReader, Parser}
-import nclogic.utils.PrettyPrintUtil
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.io.Source
@@ -33,14 +33,14 @@ class EmilaSpec extends FlatSpec with Matchers {
     println("From: " + from)
     println("To: " + to)
 
-    val initialDoNotAttack = DnfConverter.convert(Parser.parse(from).get).head
-    val toAnnihilationOrder = DnfConverter.convert(Parser.parse(to).get).head
+    val initialDoNotAttack = DnfConverter.convert(Parser.parse(from).get)
+    val toAnnihilationOrder = DnfConverter.convert(Parser.parse(to).get)
 
     println()
 
-    val path = graph.findPath(initialDoNotAttack, toAnnihilationOrder)
-    if (path.isEmpty) println("Path not found :(")
-    else PrettyPrintUtil.printPath(graph.findPath(initialDoNotAttack, toAnnihilationOrder))
+    //val path = graph.findPath(initialDoNotAttack, toAnnihilationOrder)
+    //if (path.isEmpty) println("Path not found :(")
+    //else PrettyPrintUtil.printPath(graph.findPath(initialDoNotAttack, toAnnihilationOrder))
 
     println()
     println()

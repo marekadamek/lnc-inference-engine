@@ -1,6 +1,6 @@
 package nclogic.parser
 
-import nclogic.model.Types._
+import nclogic.model.expr._
 import nclogic.parser.Tokenizer.Tokens._
 import scala.util.Try
 import nclogic._
@@ -62,19 +62,19 @@ object Parser {
     handleOperator(EqToken, Eq,
       handleOperator(RImplToken, Impl,
         handleOperator(LImplToken, (p, q) => Impl(q, p),
-          handleOperator(OrToken, (p, q) => Or(p, q),
-            handleOperator(AndToken, (p, q) => And(p, q), {
+          handleOperator(OrToken, (p, q) => Or(Set(p, q)),
+            handleOperator(AndToken, (p, q) => And(Set(p, q)), {
               case (NegToken :: tail, map) => Neg(parseTokens(tail, map))
 
               case (ChangeToken :: ts :: Nil, map) =>
-                C(processBracket(ts, map))
+                Change(processBracket(ts, map))
 
               case (NextToken :: ts :: Nil, map) =>
-                N(processBracket(ts, map))
+                Next(processBracket(ts, map))
 
-              case (FalseToken :: Nil, _) => Const(false)
+              case (FalseToken :: Nil, _) => False
 
-              case (TrueToken :: Nil, _) => Const(true)
+              case (TrueToken :: Nil, _) => True
 
               case (x :: Nil, map) if x startsWith TmpPrefix =>
                 processBracket(x, map)

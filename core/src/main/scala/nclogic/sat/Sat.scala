@@ -1,8 +1,7 @@
 package nclogic.sat
 
-import nclogic.model.CnfConverter.CNF
-import nclogic.model.DnfConverter.{AndClause, DNF}
-import nclogic.model.Types.{Const, Expr, Neg}
+import nclogic._
+import nclogic.model.expr._
 
 object Sat {
 
@@ -10,13 +9,15 @@ object Sat {
     if (andList.exists(_.isEmpty)) true
     else {
       val singles = andList.filter(_.size == 1).map(_.head)
-      singles.contains(Const(false)) || singles.exists(e => singles.contains(Neg(e)))
+      singles.contains(False) || singles.exists(e => singles.contains(Neg(e)))
     }
   }
 
-  def solve(cnf: CNF): DNF = {
+  def solve(expr: Expr): Expr = expr :> makeSet :> solve :> toOr
 
-    def solve(andList: Set[Set[Expr]], terms: Set[Expr]): Set[AndClause] = andList match {
+  private def solve(cnf: Set[Set[Expr]]): Set[Set[Expr]] = {
+
+    def solve(andList: Set[Set[Expr]], terms: Set[Expr]): Set[Set[Expr]] = andList match {
       case s if s.isEmpty => Set(terms)
       case s if isContradictory(s) => Set.empty
       case _ =>
@@ -34,7 +35,24 @@ object Sat {
     }
 
 
+    def isFalse(and: Set[Expr]) = {
+      and.exists(e1 => and.exists(e2 => e1 == Neg(e2).simplify))
+    }
+
     solve(cnf, Set.empty)
+      .map(and => and.map(_.simplify))
+      .filterNot(isFalse)
   }
 
+  private def makeSet(expr: Expr): Set[Set[Expr]] = expr match {
+    case And(es) => es flatMap makeSet
+    case Or(es) => Set((es flatMap makeSet).flatten)
+    case x: Expr => Set(Set(x))
+  }
+
+
+  private def toOr(ands: Set[Set[Expr]]): Expr  = {
+    if (ands.isEmpty) False
+    else Or(ands map And).simplify
+  }
 }

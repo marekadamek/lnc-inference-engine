@@ -13,18 +13,18 @@ object Build extends Build {
   )
 
   lazy val core = project
-	.in(file("core"))	
+    .in(file("core"))
     .settings(commonSettings: _*)
     .settings(
-     libraryDependencies ++= dependencies
+      libraryDependencies ++= dependencies
     )
 
   lazy val javaapi = project
-.in(file("javaapi"))
+    .in(file("javaapi"))
     .dependsOn(core)
 
   lazy val app = project
-.in(file("app")	)
+    .in(file("app"))
     .dependsOn(core)
 
   lazy val root = project
