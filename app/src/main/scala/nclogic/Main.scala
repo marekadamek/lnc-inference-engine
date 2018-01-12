@@ -1,25 +1,43 @@
 package nclogic
 
-import nclogic.lang.{Terminate, Until, Eval, Block}
 import nclogic.model.expr.Expr._
-import nclogic.model.expr.{Var, _}
+import nclogic.model.expr.{N, Var, _}
 import nclogic.model.Formula._
+import time._
 
 object Main extends App {
 
-  val a: Var = "a"
-  val b: Var = "b"
-  val c: Var = "c"
+  val red: Block = Block("r", () => println("red"))
+  val green: Block = Block("g", () => println("green"))
+  val yellow: Block = Block("y", () => println("yellow"))
 
-  val e = and(
-    a -> N(b -> N(c & Terminate))
+  val constraints = and(
+    !(red & green & yellow),
+    !(red & green),
+    !(green & yellow),
+    red | green | yellow
   )
 
-  //Eval.eval(e)
+  val trafficLights = and(
+    (red & !yellow & !green) -> N(red & yellow & !green & constraints),
+    (red & yellow & !green) -> N(!red & !yellow & green & constraints),
+    (!red & !yellow & green) -> N(!red & yellow & !green & constraints),
+    (!red & yellow & !green) -> N(red & !yellow & !green & constraints),
+    constraints
+  )
+
+  LncInferenceEngine.evaluate(trafficLights, red & !yellow & !green)
   //e.eval(Map((a, True)))
 
+  //  val measurement = measureTime {
+  //    //println(LncInferenceEngine.queryPaths(red & N(yellow) & N(N(green)) & N(N(N(yellow))) & N(N(N(N(red)))), trafficLights))
+  //     LncInferenceEngine.query(red & yellow & green, trafficLights)
+  //  }
+  //
+  //  println(measurement.time)
+  //  println(measurement.result)
 
-  println(LncInferenceEngine.getHistoryGraph(e))
+  //LncInferenceEngine.evaluate(trafficLights, red & !yellow & !green)
   //  println(LncInferenceEngine.isTautology(a | !a))
   //  println(x.matches(y))
   //  println(y.matches(x))

@@ -13,6 +13,8 @@ case class HistoryGraph(protected val formula: Expr) {
     val cnf = CnfConverter.convert(formula)
     val valuations = Sat.solve(cnf)
 
+    var graph = Graph.empty[Expr]
+
     val pairs = {
       def processClause(clause: Expr): List[Edge[Expr]] = {
         val nextClause = getNext(clause)
@@ -25,17 +27,19 @@ case class HistoryGraph(protected val formula: Expr) {
       }
 
       def loop(expr: Expr): List[Edge[Expr]] = expr match {
-        case Or(es) => (es flatMap loop).toList
-        case clause =>
-          val firstPair = Edge[Expr](True, stripTemporal(clause))
-          firstPair :: processClause(clause)
-
+          case Or(es) => (es flatMap loop).toList
+          case clause => {
+            val node = stripTemporal(clause.simplify)
+            graph = graph.addNode(node)
+            processClause(clause)
+          }
       }
 
       loop(valuations)
     }
 
-    pairs.foldLeft(Graph.empty[Expr]) { (g, e) => g.addEdge(e) }
+    pairs.foreach(p => graph = graph.addEdge(p))
+    graph
   }
 
   private def stripTemporal(v: Expr) = And(v.getTerms.filterNot(_.isInstanceOf[TemporalExpr]))
@@ -49,7 +53,7 @@ case class HistoryGraph(protected val formula: Expr) {
     And(base ++ next).simplify
   }
 
-  def getSuccessors(clause: Expr) = {
+  def getSuccessors(clause: Expr): Set[Expr] = {
     graph.edges
       .filter(edge => Expr.and(edge.from, clause).simplify != False)
       .map(_.to)
@@ -79,7 +83,7 @@ case class HistoryGraph(protected val formula: Expr) {
   }
 
   override def toString: String = {
-    graph.edges map { case e => e.from + " -> " + e.to } mkString "\n"
+    graph.edges map (e => e.from + " -> " + e.to) mkString "\n"
   }
 
   def getPathTree: Tree[Expr] = {
