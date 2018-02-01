@@ -5,7 +5,7 @@ import nclogic.model.expr._
 
 object Sat {
 
-  private def isContradictory(andList: Set[Set[Expr]]) = {
+  private def isContradictory(andList: List[List[Expr]]) = {
     if (andList.exists(_.isEmpty)) true
     else {
       val singles = andList.filter(_.size == 1).map(_.head)
@@ -15,44 +15,44 @@ object Sat {
 
   def solve(expr: Expr): Expr = expr :> makeSet :> solve :> toOr
 
-  private def solve(cnf: Set[Set[Expr]]): Set[Set[Expr]] = {
+  private def solve(cnf: List[List[Expr]]): List[List[Expr]] = {
 
-    def solve(andList: Set[Set[Expr]], terms: Set[Expr]): Set[Set[Expr]] = andList match {
-      case s if s.isEmpty => Set(terms)
-      case s if isContradictory(s) => Set.empty
+    def solve(andList: List[List[Expr]], terms: List[Expr]): List[List[Expr]] = andList match {
+      case Nil => List(terms)
+      case s if isContradictory(s) => Nil
       case _ =>
-        val l = andList.head.headOption map {
+        val l = andList.head.headOption.map({
           case Neg(e) => e
           case e => e
-        } get
+        }).get
 
-        val neg = Neg(l)
+        val neg = Neg(l).simplify
         //assign true
-        val tal = andList.filterNot(_.contains(l)).map(and => and - neg)
+        val tal = andList.filterNot(_.contains(l)).map(and => and.filterNot(_ == neg))
         //assign neg
-        val nal = andList.filterNot(_.contains(neg)).map(and => and - l)
-        solve(tal, terms + l) ++ solve(nal, terms + neg)
+        val nal = andList.filterNot(_.contains(neg)).map(and => and.filterNot(_ == l))
+        solve(tal, terms ++ List(l)) ++ solve(nal, terms ++ List(neg))
     }
 
 
-    def isFalse(and: Set[Expr]) = {
+    def isFalse(and: List[Expr]) = {
       and.exists(e1 => and.exists(e2 => e1 == Neg(e2).simplify))
     }
 
-    solve(cnf, Set.empty)
-      .map(and => and.map(_.simplify))
+    solve(cnf, List.empty)
+      //.map(and => and.map(_.simplify))
       .filterNot(isFalse)
   }
 
-  private def makeSet(expr: Expr): Set[Set[Expr]] = expr match {
+  private def makeSet(expr: Expr): List[List[Expr]] = expr match {
     case And(es) => es flatMap makeSet
-    case Or(es) => Set((es flatMap makeSet).flatten)
-    case x: Expr => Set(Set(x))
+    case Or(es) => List((es flatMap makeSet).flatten)
+    case x: Expr => List(List(x))
   }
 
-
-  private def toOr(ands: Set[Set[Expr]]): Expr  = {
+  private def toOr(ands: List[List[Expr]]): Expr = {
     if (ands.isEmpty) False
     else Or(ands map And).simplify
   }
+
 }

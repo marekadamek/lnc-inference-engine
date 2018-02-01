@@ -10,4 +10,5 @@ case class Eq(e1: Expr, e2: Expr) extends Expr {
 
   override def isAtomic = false
 
+  override def replaceVariables(s: SubstitutionSet): Expr = Eq(e1.replaceVariables(s), e2.replaceVariables(s))
 }

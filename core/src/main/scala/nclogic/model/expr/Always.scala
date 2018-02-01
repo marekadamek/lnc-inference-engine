@@ -21,4 +21,5 @@ case class Always(e: Expr) extends TemporalExpr {
     case _ => e.simplify.always
   }
 
+  override def replaceVariables(s: SubstitutionSet): Expr = Always(e.replaceVariables(s))
 }

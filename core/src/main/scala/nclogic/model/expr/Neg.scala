@@ -21,4 +21,6 @@ case class Neg(e: Expr) extends Expr {
       case Next(x) => Next(Neg(x)).simplify
       case _ => Neg(e.simplify).simplify
     }
+
+  override def replaceVariables(s: SubstitutionSet): Expr = Neg(e.replaceVariables(s))
 }

@@ -1,17 +1,12 @@
 package nclogic.model
 
-import nclogic.model.expr.{Var, Const, Expr}
+import nclogic.model.expr.{Var, Term, Expr}
 
 class Formula(val e: Expr) {
 
   lazy val historyGraph = HistoryGraph(e)
-  lazy val paths = historyGraph.getPathTree.getPaths().map(_.tail)
 
-  def all(f: List[Expr] => Boolean) = paths forall f
-
-  def exists(f: List[Expr] => Boolean) = paths exists f
-
-  def eval(assignments: Map[Var, Const]): Map[Var, Const] = ???
+  //def eval(assignments: Map[Var, Const]): Map[Var, Const] = ???
 }
 
 object Formula {

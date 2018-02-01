@@ -1,14 +1,14 @@
 package nclogic.model.expr
 
-case class Or(es: Set[Expr]) extends Expr {
+case class Or(es: List[Expr]) extends Expr {
    override def toString = "(" + es.map(_.toString).mkString(" | ") + ")"
 
    def isAtomic = false
 
    def simplify = {
-     var simplified = es.map(_.simplify).foldLeft(Set.empty[Expr]) {(result, e) => e match {
-       case Or(others) => result ++ others
-       case _ => result + e
+     var simplified = es.map(_.simplify).foldLeft(List.empty[Expr]) {(result, e) => e match {
+       case Or(others) => (result ++ others).distinct
+       case _ => if (result.contains(e)) result else result ++ List(e)
      }}
 
      if (simplified.size == 1) es.head
@@ -27,9 +27,11 @@ case class Or(es: Set[Expr]) extends Expr {
    override lazy val getTerms = es.flatMap(_.getTerms)
 
    override def equals(o: Any) = o match {
-     case Or(others) => es == others
+     case Or(others) => es.toSet == others.toSet
      case _ => false
    }
 
    override def hashCode(): Int = es.map(_.hashCode()).sum
- }
+
+  override def replaceVariables(s: SubstitutionSet): Expr = Or(es.map(_.replaceVariables(s)))
+}

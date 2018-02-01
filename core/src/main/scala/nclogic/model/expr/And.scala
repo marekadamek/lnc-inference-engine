@@ -1,14 +1,16 @@
 package nclogic.model.expr
 
-case class And(es: Set[Expr]) extends Expr {
+case class And(es: List[Expr]) extends Expr {
+  //require(es == es.distinct, "And contains duplicates\n" + es + "\n" + es.distinct)
+
   override def toString = "(" + es.map(_.toString).mkString(" & ") + ")"
 
   def isAtomic = false
 
   def simplify = {
-    var simplified = es.map(_.simplify).foldLeft(Set.empty[Expr]) {(result, e) => e match {
-      case And(others) => result ++ others
-      case _ => result + e
+    var simplified = es.map(_.simplify).foldLeft(List.empty[Expr]) {(result, e) => e match {
+      case And(others) => (result ++ others).distinct
+      case _ => if (result.contains(e)) result else result ++ List(e)
     }}
 
     if (simplified.size == 1) es.head
@@ -24,12 +26,14 @@ case class And(es: Set[Expr]) extends Expr {
     }
   }
 
-  override lazy val getTerms = es.flatMap(_.getTerms)
+  override lazy val getTerms: List[Expr] = es.flatMap(_.getTerms)
 
   override def equals(o: Any) = o match {
-    case And(others) => es == others
+    case And(others) => es.toSet == others.toSet
     case _ => false
   }
 
   override def hashCode(): Int = es.map(_.hashCode()).sum
+
+  override def replaceVariables(s: SubstitutionSet): Expr = And(es.map(_.replaceVariables(s)))
 }

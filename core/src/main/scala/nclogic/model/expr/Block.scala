@@ -8,4 +8,6 @@ case class Block(name: String, b: () => Unit) extends Expr {
   def execute(): Unit = b()
 
   override def toString = name
+
+  override def replaceVariables(s: SubstitutionSet): Expr = this
 }

@@ -21,4 +21,6 @@ case class Next(e: Expr) extends TemporalExpr {
     //case Neg(e1) => Neg(N(e1)).simplify
     case _ => Next(e.simplify).simplify
   }
+
+  override def replaceVariables(s: SubstitutionSet): Expr = Next(e.replaceVariables(s))
 }

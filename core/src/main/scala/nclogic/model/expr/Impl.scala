@@ -6,4 +6,6 @@ case class Impl(e1: Expr, e2: Expr) extends Expr {
   def isAtomic = false
 
   def simplify = Expr.or(Neg(e1), e2)
+
+  override def replaceVariables(s: SubstitutionSet): Expr = Impl(e1.replaceVariables(s), e2.replaceVariables(s))
 }
