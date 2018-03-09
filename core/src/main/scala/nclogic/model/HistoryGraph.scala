@@ -1,88 +1,104 @@
 package nclogic.model
 
-import nclogic.graph.{Edge, Graph}
-import nclogic.model.converters.CnfConverter
 import nclogic.model.expr._
-import nclogic.sat.Sat
 
 
-case class HistoryGraph(protected val formula: Expr) {
+case class Edge(from: Expr, to: Expr)
 
-  val (graph, startNodes) = {
-    val cnf = CnfConverter.convert(formula)
-    val valuations = Sat.solve(cnf)
+case class HistoryGraph(private val valuationsExpr: Expr) {
 
-    var graph = Graph.empty[Expr]
-
-    val pairs = {
-      def processClause(clause: Expr): List[Edge[Expr]] = {
-        val nextClause = getNext(clause)
-        val pair = Edge[Expr](clause, nextClause)
-
-        if (nextClause == clause) List(pair)
-        else pair :: processClause(nextClause)
-      }
-
-      def loop(expr: Expr): List[Edge[Expr]] = expr match {
-        case Or(es) => es flatMap loop
-        case clause =>
-          val node = clause.simplify
-          graph = graph.addNode(node)
-          processClause(clause)
-      }
-
-      loop(valuations)
-    }
-
-    pairs.foreach(p => graph = graph.addEdge(p))
-    (graph, valuations.asInstanceOf[Or].es)
+  val valuations: List[Expr] = valuationsExpr match {
+    case Or(es) => es
+    case e => List(e)
   }
 
-  def getNext(clause: Expr): Expr = {
-    val (temporal, nonTemporal) = clause.getTerms.partition(_.isInstanceOf[TemporalExpr])
-    val next = temporal.map(_.asInstanceOf[TemporalExpr]).map(_.e)
-    val base = nonTemporal
-      .filterNot(e => next.contains(Neg(e).simplify))
+  lazy val baseTerms: Set[Expr] = valuationsExpr.baseTerms
+  lazy val level: Int = valuationsExpr.level
 
-    And(base ++ next).simplify
+  private val metaEdges = valuations.map(convertToMetaEdge).toSet
+
+  def getAllNodes: Set[Expr] = {
+    val compressedNodes = Set(metaEdges.map(_.from), metaEdges.map(_.to)).flatten
+    val allBaseTerms = (0 until level).flatMap(i => baseTerms.map(t => createNext(t, i)))
+    compressedNodes.flatMap(n => fill(n.getTerms, allBaseTerms.toList, Set(Set.empty)))
+      .map(x => And(x.toList).simplify)
   }
 
-  def getSuccessors(clause: Expr): Set[Expr] = {
-    graph.edges
-      .filter(edge => Expr.and(edge.from, clause).simplify != False)
-      .map(_.to)
-      .map(to => {
-        And(clause.getTerms.filterNot(to.getTerms.map(Neg).map(_.simplify).contains) ++ to.getTerms).simplify
+  private def fill(terms: List[Expr], allBaseTerms: List[Expr], acc: Set[Set[Expr]]): Set[Set[Expr]] = allBaseTerms match {
+    case Nil => acc
+    case bt :: bts =>
+      val newOnes = terms.find(t => t == bt || t == Neg(bt))
+        .map(x => Set(x))
+        .getOrElse(Set(bt, Neg(bt)))
+
+      val newAcc = acc.flatMap(set => newOnes.map(no => set + no))
+
+      fill(terms, bts, newAcc)
+
+  }
+
+  def getSuccessors(node: Expr): Set[Expr] = {
+    val tos = metaEdges.toList.filter(e => (e.from & node).simplify != False).map(_.to)
+    val advanced = advance(node)
+    val result = tos.flatMap(to => {
+      val lastOnes = to.getTerms.filter(_.level == level - 1)
+      generateLastOnesList(lastOnes).map(lo => {
+        advanced & lo
       })
+    })
+    result.toSet
   }
 
-  def findPath(from: Expr, to: Expr) = {
-    def loop(toDo: List[List[Expr]], done: Set[Expr]): List[Expr] = toDo match {
-      case Nil => Nil
-      case path :: paths =>
-        val current = path.head
+  def findPath(from: Expr, to: Expr): List[Expr] = {
 
-        if (Expr.and(to, current).simplify != False) path
+    def bfs(todo: List[List[Expr]]): List[Expr] = todo match {
+      case Nil => Nil
+      case curr :: rest =>
+        if ((curr.head & to).simplify != False) curr.reverse
         else {
-          val succs = getSuccessors(current).diff(done)
-          val newPaths = succs.toList map {
-            _ :: path
-          }
-          loop(paths ++ newPaths, done + current)
+          val newPaths = getSuccessors(curr.head)
+            .filterNot(curr.contains)
+            .map(_ :: curr)
+          bfs(rest ++ newPaths)
         }
     }
 
-    loop(List(List(from)), Set.empty).reverse
+    bfs(List(List(from)))
+  }
+  private def generateLastOnesList(lastOnes: List[Expr]): List[Expr] = {
+    var result = List[Expr](True)
+
+    baseTerms.foreach(bt => {
+      lastOnes.find(p => p.baseTerms == Set(bt)) match {
+        case Some(lo) => result = result.map(_ & lo)
+        case None =>
+          result = List(bt, Neg(bt)).map(t => createNext(t, level - 1)).flatMap(t => {
+            result.map(_ & t)
+          })
+      }
+    })
+
+    result
   }
 
-  override def toString: String = {
-    graph.edges map (e => e.from + " -> " + e.to) mkString "\n"
+  private def convertToMetaEdge(e: Expr): Edge = {
+    val terms = e.getTerms
+    val from = And(terms.filter(_.level < level))
+    val to = advance(e)
+
+    Edge(from, to)
   }
 
-  def prettyString: String = {
-    def prettyNode = (n: Expr) => And(n.getTerms.filterNot(_.isInstanceOf[Next])).simplify
+  private def advance(e: Expr): Expr = e.getTerms.filter(_.level > 0).map(_.asInstanceOf[TemporalExpr].e) match {
+    case Nil => True
+    case e1 :: Nil => e1
+    case es => And(es)
+  }
 
-    graph.edges map (e => prettyNode(e.from) + " -> " + prettyNode(e.to)) mkString "\n"
+  private def createNext(term: Expr, level: Int): Expr = level match {
+    case 0 => term
+    case 1 => N(term)
+    case _ => createNext(N(term), level - 1)
   }
 
 }

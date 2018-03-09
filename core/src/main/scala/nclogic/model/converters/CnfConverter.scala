@@ -1,10 +1,9 @@
 package nclogic.model.converters
 
 import nclogic.model.expr.{And, Expr, Or}
-import nclogic._
 
 object CnfConverter {
-  def convert(expr: Expr): Expr = expr :> convertExpr
+  def convert(expr: Expr): Expr = convertExpr(expr.simplify)
 
   private def convertExpr(expr: Expr): Expr = expr.simplify match {
     // f((e1 & e2) | e) -> f(e1 | e) & f(e2 | e)
@@ -12,22 +11,20 @@ object CnfConverter {
       case -1 =>
         val converted = es map convertExpr
 
-        if (converted == es) Or(es)
+        if (converted.toSet == es.toSet) Or(es)
         else convertExpr(Or(converted))
 
       case idx =>
         val and = es(idx).asInstanceOf[And]
         val L = es.take(idx)
-        val R = es.drop(idx +1)
+        val R = es.drop(idx + 1)
         val ors = and.es.map(e => Or(L ++ (e :: R)).simplify)
         convertExpr(And(ors))
     }
     // proceed conversion recursively
     case And(es) =>
       val converted = es map convertExpr
-
-      if (converted == es) And(es)
-      else convertExpr(And(converted))
+      And(converted).simplify
     case e => e
   }
 }

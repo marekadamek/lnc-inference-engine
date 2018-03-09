@@ -1,8 +1,7 @@
 package nclogic
 
-import eval.EvalEngine
 import nclogic.model.expr.Expr._
-import nclogic.model.expr.{N, _}
+import nclogic.model.expr._
 
 object Sum extends App {
   var input = List(1, 2, 3, 4, 5)
@@ -23,7 +22,7 @@ object Sum extends App {
   )
 
   println(input)
-  EvalEngine.eval(sumExpr)
+ // EvalEngine.eval(sumExpr)
 
 
   //val g = LncInferenceEngine.getHistoryGraph(calc)

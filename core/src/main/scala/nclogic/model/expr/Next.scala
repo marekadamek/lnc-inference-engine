@@ -2,6 +2,11 @@ package nclogic.model.expr
 
 case class Next(e: Expr) extends TemporalExpr {
   override def toString = s"N($e)"
+  override def toLatexString = e match {
+    case Term(t) => t + "'"
+    case Neg(Term(t)) => "\\lnot " + t + "'"
+    case _ => "N($e)"
+  }
 
   def isAtomic = e.isAtomic
 
@@ -23,4 +28,6 @@ case class Next(e: Expr) extends TemporalExpr {
   }
 
   override def replaceVariables(s: SubstitutionSet): Expr = Next(e.replaceVariables(s))
+
+  override def baseTerms: Set[Expr] = e.baseTerms
 }

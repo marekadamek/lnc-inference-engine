@@ -1,0 +1,44 @@
+# Example 3
+
+# policeman - farmer
+# thief - wolf
+# boy1
+# boy2
+# girl1
+# girl2
+# mother
+# father
+
+# łódka zmienia swoje położenie
+& ((thief <=> policeman) | (boy1 & boy2 & girl1 & girl2 & mather & father) <=> !thief)
+$ (mother <=> father | (((boy1 & boy2) <=> !mather) & ((girl1 & girl1) <=> !father)))
+
+$ (
+      (C(policeman) & !C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & !C(mother) !C(father))
+    | (C(policeman) & C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & !C(mother) !C(father))
+    | (C(policeman) & !C(thief) & C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & !C(mother) !C(father))
+    | (C(policeman) & !C(thief) & !C(boy1) & C(boy2) & !C(girl1) & !C(girl2) & !C(mother) !C(father))
+    | (C(policeman) & !C(thief) & !C(boy1) & !C(boy2) & C(girl1) & !C(girl2) & !C(mother) !C(father))
+    | (C(policeman) & !C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & C(girl2) & !C(mother) !C(father))
+    | (C(policeman) & !C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & C(mother) !C(father))
+    | (C(policeman) & !C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & !C(mother) C(father))
+
+      (C(mother) & !C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & !C(policeman) !C(father))
+    | (C(mother) & C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & !C(policeman) !C(father))
+    | (C(mother) & !C(thief) & C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & !C(policeman) !C(father))
+    | (C(mother) & !C(thief) & !C(boy1) & C(boy2) & !C(girl1) & !C(girl2) & !C(policeman) !C(father))
+    | (C(mother) & !C(thief) & !C(boy1) & !C(boy2) & C(girl1) & !C(girl2) & !C(policeman) !C(father))
+    | (C(mother) & !C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & C(girl2) & !C(policeman) !C(father))
+    | (C(mother) & !C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & C(policeman) !C(father))
+    | (C(mother) & !C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & !C(policeman) C(father))
+
+      (C(father) & !C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & !C(mother) !C(policeman))
+    | (C(father) & C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & !C(mother) !C(policeman))
+    | (C(father) & !C(thief) & C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & !C(mother) !C(policeman))
+    | (C(father) & !C(thief) & !C(boy1) & C(boy2) & !C(girl1) & !C(girl2) & !C(mother) !C(policeman))
+    | (C(father) & !C(thief) & !C(boy1) & !C(boy2) & C(girl1) & !C(girl2) & !C(mother) !C(policeman))
+    | (C(father) & !C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & C(girl2) & !C(mother) !C(policeman))
+    | (C(father) & !C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & C(mother) !C(policeman))
+    | (C(father) & !C(thief) & !C(boy1) & !C(boy2) & !C(girl1) & !C(girl2) & !C(mother) C(policeman))
+)
+

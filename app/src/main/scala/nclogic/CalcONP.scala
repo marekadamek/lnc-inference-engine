@@ -1,6 +1,5 @@
 package nclogic
 
-import eval.EvalEngine
 import nclogic.model.expr.Expr._
 import nclogic.model.expr.{N, _}
 
@@ -46,7 +45,7 @@ object CalcONP extends App {
   )
 
   println(input)
-  EvalEngine.eval(calc)
+  //EvalEngine.eval(calc)
 
 
   //val g = LncInferenceEngine.getHistoryGraph(calc)

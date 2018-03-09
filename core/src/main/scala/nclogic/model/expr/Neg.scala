@@ -2,6 +2,7 @@ package nclogic.model.expr
 
 case class Neg(e: Expr) extends Expr {
   override def toString = "!" + e
+  override def toLatexString: String = "\\lnot " + e.toLatexString
 
   def isAtomic = e match {
     case Next(_) => false
@@ -23,4 +24,8 @@ case class Neg(e: Expr) extends Expr {
     }
 
   override def replaceVariables(s: SubstitutionSet): Expr = Neg(e.replaceVariables(s))
+
+  override def baseTerms: Set[Expr] = e.baseTerms
+
+  override def level: Int = e.level
 }

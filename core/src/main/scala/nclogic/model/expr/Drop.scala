@@ -14,4 +14,6 @@ case class Drop(e: Expr) extends TemporalExpr {
   }
 
   override def replaceVariables(s: SubstitutionSet): Expr = Next(e.replaceVariables(s))
+
+  override def baseTerms: Set[Expr] = Set(this)
 }

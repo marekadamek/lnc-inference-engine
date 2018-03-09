@@ -13,14 +13,14 @@ object LncInferenceEngine {
 
   def getHistoryGraph(formula: Expr) = HistoryGraph(formula)
 
-  def query(query: Expr, formula: Expr): Boolean = queryPaths(query, formula).nonEmpty
+ // def query(query: Expr, formula: Expr): Boolean = queryPaths(query, formula).nonEmpty
 
-  def queryPaths(query: Expr, formula: Expr): List[List[Expr]] = {
-    val graph = HistoryGraph(formula)
-    val querySolutions = toSet(Sat.solve(CnfConverter.convert(query)))
-
-    querySolutions.flatMap(q => matches(And(q), graph.graph.nodes, graph))
-  }
+//  def queryPaths(query: Expr, formula: Expr): List[List[Expr]] = {
+//    val graph = HistoryGraph(formula)
+//    val querySolutions = toSet(Sat.solve(CnfConverter.convert(query)))
+//
+//    querySolutions.flatMap(q => matches(And(q), graph.graph.nodes, graph))
+//  }
 
   private def getSubstiturionSets(e: Expr): List[SubstitutionSet] = {
     val predicates = e.getTerms
@@ -36,29 +36,29 @@ object LncInferenceEngine {
     } toList
   }
 
-  private def matches(query: Expr, nodes: Set[Expr], graph: HistoryGraph): List[List[Expr]] = {
-    val (next, current) = query.getTerms.partition(_.isInstanceOf[Next])
-    val filtered = nodes.filter(n => current.forall(e => {
-      if (n.getTerms.contains(e)) true
-      else {
-        val sets = getSubstiturionSets(n)
-        sets.exists(s => n.replaceVariables(s).getTerms.contains(e))
-      }
-    }))
-
-    if (next.isEmpty) {
-      return filtered.toList.map(n => List(n))
-    }
-
-    val nextQuery = And(next.map(_.asInstanceOf[Next].e))
-    filtered.toList.flatMap(n => {
-      val successors = graph.getSuccessors(n)
-      matches(nextQuery, successors, graph) match {
-        case Nil => Nil
-        case tails => tails.map(t => n :: t)
-      }
-    })
-  }
+//  private def matches(query: Expr, nodes: Set[Expr], graph: HistoryGraph): List[List[Expr]] = {
+//    val (next, current) = query.getTerms.partition(_.isInstanceOf[Next])
+//    val filtered = nodes.filter(n => current.forall(e => {
+//      if (n.getTerms.contains(e)) true
+//      else {
+//        val sets = getSubstiturionSets(n)
+//        sets.exists(s => n.replaceVariables(s).getTerms.contains(e))
+//      }
+//    }))
+//
+//    if (next.isEmpty) {
+//      return filtered.toList.map(n => List(n))
+//    }
+//
+//    val nextQuery = And(next.map(_.asInstanceOf[Next].e))
+//    filtered.toList.flatMap(n => {
+//      val successors = graph.getSuccessors(n)
+//      matches(nextQuery, successors, graph) match {
+//        case Nil => Nil
+//        case tails => tails.map(t => n :: t)
+//      }
+//    })
+//  }
 
   def getNext(clause: Set[Expr]): Set[Expr] = clause
     .filter(_.isInstanceOf[Next])

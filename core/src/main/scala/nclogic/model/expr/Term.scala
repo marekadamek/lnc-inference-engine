@@ -15,4 +15,8 @@ case class Term(value: Any) extends Unifiable {
   override def simplify: Expr = this
 
   override def isAtomic: Boolean = true
+
+  override def baseTerms: Set[Expr] = Set(this)
+
+  override def level: Int = 0
 }

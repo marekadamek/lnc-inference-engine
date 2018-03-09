@@ -10,4 +10,8 @@ case class Cond(name: String, condition: () => Boolean) extends Expr {
   def check(): Boolean = condition()
 
   override def replaceVariables(s: SubstitutionSet): Expr = this
+
+  override def baseTerms: Set[Expr] = Set(this)
+
+  override def level: Int = 0
 }

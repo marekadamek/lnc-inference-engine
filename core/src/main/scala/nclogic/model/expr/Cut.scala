@@ -7,4 +7,8 @@ case object Cut extends Expr {
   def simplify: Expr = this
 
   override def replaceVariables(s: SubstitutionSet): Expr = this
+
+  override def baseTerms: Set[Expr] = Set(this)
+
+  override def level: Int = 0
 }

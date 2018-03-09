@@ -13,4 +13,6 @@ case class Change(e: Expr) extends TemporalExpr {
   }
 
   override def replaceVariables(s: SubstitutionSet): Expr = Change(e.replaceVariables(s))
+
+  override def baseTerms: Set[Expr] = e.baseTerms
 }

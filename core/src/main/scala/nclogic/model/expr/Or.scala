@@ -2,6 +2,7 @@ package nclogic.model.expr
 
 case class Or(es: List[Expr]) extends Expr {
    override def toString = "(" + es.map(_.toString).mkString(" | ") + ")"
+    override def toLatexString: String = "(" + es.map(_.toLatexString).mkString(" \\lor ") + ")"
 
    def isAtomic = false
 
@@ -16,7 +17,7 @@ case class Or(es: List[Expr]) extends Expr {
        simplified = simplified.filterNot(_ == False)
        if (simplified.contains(True)) True
        else {
-         val isContradictory = simplified.exists(e1 => simplified.exists(e2 => e1 == Neg(e2) || Neg(e1) == e2))
+         val isContradictory = simplified.exists(e1 => simplified.exists(e2 => e1 == Neg(e2).simplify || Neg(e1).simplify == e2))
          if (isContradictory) True
          else if (es == simplified) this
          else Or(simplified).simplify
@@ -34,4 +35,8 @@ case class Or(es: List[Expr]) extends Expr {
    override def hashCode(): Int = es.map(_.hashCode()).sum
 
   override def replaceVariables(s: SubstitutionSet): Expr = Or(es.map(_.replaceVariables(s)))
+
+  override def baseTerms: Set[Expr] = es.flatMap(_.baseTerms).toSet
+
+  override def level: Int = es.map(_.level).max
 }
