@@ -6,12 +6,12 @@ import org.scalatest._
 
 class DnfConverterSpec extends FlatSpec with Matchers {
 
-  val cA = Term("a")
-  val cB = Term("b")
-  val cC = Term("c")
-  val cD = Term("d")
-  val cE = Term("e")
-  val cF = Term("f")
+  val cA = Var("a")
+  val cB = Var("b")
+  val cC = Var("c")
+  val cD = Var("d")
+  val cE = Var("e")
+  val cF = Var("f")
 
   "DnfConverter" should "convert 1" in {
     val given = cA & cB & (cC | cD)

@@ -6,74 +6,73 @@ import org.scalatest._
 
 class CnfConverterSpec extends FlatSpec with Matchers {
 
-  val cA = Term("a")
-  val cB = Term("b")
-  val cC = Term("c")
-  val cD = Term("d")
-  val cE = Term("e")
-  val cF = Term("f")
+  val b = Var("b")
+  val c = Var("c")
+  val d = Var("d")
+  val e = Var("e")
+  val f = Var("f")
+  val g = Var("g")
 
   "CnfConverter" should "convert 1" in {
-    val given = (cA & cB) | (cC & cD)
-    val expected = (cA | cC) & (cA | cD) & (cB | cC) & (cB | cD)
+    val given = (g & b) | (c & d)
+    val expected = (g | c) & (g | d) & (b | c) & (b | d)
     val actual = CnfConverter.convert(given)
-
-    actual shouldEqual expected
+    actual shouldEqual expected.simplify
   }
 
   it should "convert 2" in {
-    val given = cA | (cC & cD)
-    val expected = (cA | cC) & (cA | cD)
+    val given = g | (c & d)
+    val expected = (g | c) & (g | d)
     val actual = CnfConverter.convert(given)
 
-    actual shouldEqual expected
+    actual shouldEqual expected.simplify
   }
 
   it should "convert 3" in {
-    val given = (cA & cB) | cC
-    val expected = (cA | cC) & (cB | cC)
+    val given = (g & b) | c
+    val expected = (g | c) & (b | c)
     val actual = CnfConverter.convert(given)
 
-    actual shouldEqual expected
+    actual shouldEqual expected.simplify
   }
 
   it should "convert 4" in {
-    val given = (cA & cB & cC) | cD
-    val expected = (cA | cD) & (cB | cD) & (cC | cD)
+    val given = (g & b & c) | d
+    val expected = (g | d) & (b | d) & (c | d)
     val actual = CnfConverter.convert(given)
 
-    actual shouldEqual expected
+    actual shouldEqual expected.simplify
   }
 
   it should "convert 5" in {
-    val given = (cA & cB) | (cC & cD) | (cE & cF)
-    val expected = (cA | cC | cE) & (cA | cC | cF) & (cA | cD | cE) & (cA | cD | cF) & (cB | cC | cE) & (cB | cC | cF) & (cB | cD | cE) & (cB | cD | cF)
+    val given = (g & b) | (c & d) | (e & f)
+    val expected = (g | c | e) & (g | c | f) & (g | d | e) & (g | d | f) & (b | c | e) & (b | c | f) & (b | d | e) & (b | d | f)
     val actual = CnfConverter.convert(given)
 
-    actual shouldEqual expected
+    actual shouldEqual expected.simplify
   }
 
   it should "convert 6" in {
-    val given = (cA & cB & cC) | (cD & cE & cF)
-    val expected = (cA | cD) & (cA | cE) & (cA | cF) & (cB | cD) & (cB | cE) & (cB | cF) & (cC | cD) & (cC | cE) & (cC | cF)
+    val given = (g & b & c) | (d & e & f)
+    val expected = (g | d) & (g | e) & (g | f) & (b | d) & (b | e) & (b | f) & (c | d) & (c | e) & (c | f)
     val actual = CnfConverter.convert(given)
 
-    actual shouldEqual expected
+    actual shouldEqual expected.simplify
   }
 
   it should "convert 7" in {
-    val given = (cA & cB) | (cA & cC)
-    val expected = cA & (cB | cC)
+    val given = (g & b) | (g & c)
+    val expected = g & (b | c)
     val actual = CnfConverter.convert(given)
 
-    actual shouldEqual expected
+    actual shouldEqual expected.simplify
   }
 
   it should "convert 8" in {
-    val given = (cA & N(!cA & !cB & cC) & N(N(cD))) | (cB & N(!cA & !cB & cC) & N(N(cE)))
-    val expected = (cA | cB) & (cA | N(N(cE))) & N(!cA) & N(!cB) & N(cC) & (N(N(cD)) | cB) & (N(N(cD)) | N(N(cE)))
+    val given = (g & N(g)) | (G(g) & g)
+    val expected = (G(g) | g) & (G(g) | N(g))
     val actual = CnfConverter.convert(given)
 
-    actual shouldEqual expected
+    actual shouldEqual expected.simplify
   }
 }

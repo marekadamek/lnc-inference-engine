@@ -6,8 +6,8 @@ import nclogic.model.expr._
 object BinaryValidator {
 
   def toBool(e: Expr): Boolean = e match {
-    case Term(_) => true
-    case Neg(Term(_)) => false
+    case Var(_) => true
+    case Neg(Var(_)) => false
     case Next(x) => toBool(x)
     case _ => throw new IllegalArgumentException("Illegal")
   }

@@ -1,6 +1,7 @@
 package nclogic
 
 import nclogic.binary.{BinaryGenerator, BinaryValidator, CRC}
+import nclogic.model.converters.CnfConverter
 import nclogic.model.expr._
 import nclogic.model.{BinaryGraph, HistoryGraph}
 import nclogic.sat.Sat
@@ -10,15 +11,15 @@ import scala.util.Random
 
 object ValidationTest extends App {
 
-  val a = Term("a")
-  val b = Term("b")
-  val c = Term("b")
+  val a = Var("a")
+  val b = Var("b")
+  val c = Var("b")
 
   //val formula = !a -> N(N(a))
   //val formula = C(a | b)
   val formula = (!a -> C(b)) & (!b -> C(a))
 
-  val sat = Sat.solve(formula.cnf)
+  val sat = Sat.solve(CnfConverter.convert(formula))
   val graph = HistoryGraph(sat)
   val bGraph = BinaryGraph(graph)
 

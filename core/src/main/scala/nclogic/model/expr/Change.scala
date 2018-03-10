@@ -5,14 +5,12 @@ case class Change(e: Expr) extends TemporalExpr {
 
   def isAtomic = false
 
-  def simplify: Expr = e match {
+  def simplify(implicit level: Int): Expr = e match {
     case Neg(x) => Change(x).simplify
     case _ =>
       val es = e.simplify
-      Eq(es, Next(Neg(es))).simplify
+      (es <-> N(!es)).simplify
   }
-
-  override def replaceVariables(s: SubstitutionSet): Expr = Change(e.replaceVariables(s))
 
   override def baseTerms: Set[Expr] = e.baseTerms
 }

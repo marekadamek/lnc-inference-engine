@@ -3,27 +3,24 @@ package nclogic.model.converters
 import nclogic.model.expr.{And, Expr, Or}
 
 object CnfConverter {
-  def convert(expr: Expr): Expr = convertExpr(expr.simplify)
 
-  private def convertExpr(expr: Expr): Expr = expr.simplify match {
+  def convert(expr: Expr): Expr = expr.simplify match {
     // f((e1 & e2) | e) -> f(e1 | e) & f(e2 | e)
-    case Or(es) => es.indexWhere(_.isInstanceOf[And]) match {
-      case -1 =>
-        val converted = es map convertExpr
+    case Or(es) => es.find(_.isInstanceOf[And]) match {
+      case None =>
+        val converted = es map convert
 
-        if (converted.toSet == es.toSet) Or(es)
-        else convertExpr(Or(converted))
+        if (converted == es) Or(es).simplify
+        else convert(Or(converted))
 
-      case idx =>
-        val and = es(idx).asInstanceOf[And]
-        val L = es.take(idx)
-        val R = es.drop(idx + 1)
-        val ors = and.es.map(e => Or(L ++ (e :: R)).simplify)
-        convertExpr(And(ors))
+      case Some(and) =>
+        val rest = es - and
+        val ors = and.asInstanceOf[And].es.map(e => Or(rest + e).simplify)
+        convert(And(ors))
     }
     // proceed conversion recursively
     case And(es) =>
-      val converted = es map convertExpr
+      val converted = es map convert
       And(converted).simplify
     case e => e
   }

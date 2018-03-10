@@ -8,7 +8,7 @@ case class Edge(from: Expr, to: Expr)
 case class HistoryGraph(private val valuationsExpr: Expr) {
 
   val valuations: List[Expr] = valuationsExpr match {
-    case Or(es) => es
+    case Or(es) => es.toList
     case e => List(e)
   }
 
@@ -19,9 +19,9 @@ case class HistoryGraph(private val valuationsExpr: Expr) {
 
   def getAllNodes: Set[Expr] = {
     val compressedNodes = Set(metaEdges.map(_.from), metaEdges.map(_.to)).flatten
-    val allBaseTerms = (0 until level).flatMap(i => baseTerms.map(t => createNext(t, i)))
-    compressedNodes.flatMap(n => fill(n.getTerms, allBaseTerms.toList, Set(Set.empty)))
-      .map(x => And(x.toList).simplify)
+    val allBaseTerms = (0 until level).flatMap(i => baseTerms.map(t => Next.createNext(t, i)))
+    compressedNodes.flatMap(n => fill(n.getTerms.toList, allBaseTerms.toList, Set(Set.empty)))
+      .map(x => And(x).simplify)
   }
 
   private def fill(terms: List[Expr], allBaseTerms: List[Expr], acc: Set[Set[Expr]]): Set[Set[Expr]] = allBaseTerms match {
@@ -42,19 +42,17 @@ case class HistoryGraph(private val valuationsExpr: Expr) {
     val advanced = advance(node)
     val result = tos.flatMap(to => {
       val lastOnes = to.getTerms.filter(_.level == level - 1)
-      generateLastOnesList(lastOnes).map(lo => {
-        advanced & lo
-      })
+      generateLastOnesList(lastOnes.toList).map(lo => And(Set(advanced, lo)).simplify)
     })
     result.toSet
   }
 
   def findPath(from: Expr, to: Expr): List[Expr] = {
-
+    val (fromSimplified, toSimplified) = (from.simplify, to.simplify)
     def bfs(todo: List[List[Expr]]): List[Expr] = todo match {
       case Nil => Nil
       case curr :: rest =>
-        if ((curr.head & to).simplify != False) curr.reverse
+        if ((curr.head & toSimplified).simplify != False) curr.reverse
         else {
           val newPaths = getSuccessors(curr.head)
             .filterNot(curr.contains)
@@ -63,7 +61,7 @@ case class HistoryGraph(private val valuationsExpr: Expr) {
         }
     }
 
-    bfs(List(List(from)))
+    bfs(List(List(fromSimplified)))
   }
   private def generateLastOnesList(lastOnes: List[Expr]): List[Expr] = {
     var result = List[Expr](True)
@@ -72,7 +70,7 @@ case class HistoryGraph(private val valuationsExpr: Expr) {
       lastOnes.find(p => p.baseTerms == Set(bt)) match {
         case Some(lo) => result = result.map(_ & lo)
         case None =>
-          result = List(bt, Neg(bt)).map(t => createNext(t, level - 1)).flatMap(t => {
+          result = List(bt, Neg(bt)).map(t => Next.createNext(t, level - 1)).flatMap(t => {
             result.map(_ & t)
           })
       }
@@ -89,16 +87,10 @@ case class HistoryGraph(private val valuationsExpr: Expr) {
     Edge(from, to)
   }
 
-  private def advance(e: Expr): Expr = e.getTerms.filter(_.level > 0).map(_.asInstanceOf[TemporalExpr].e) match {
+  private def advance(e: Expr): Expr = e.getTerms.toList.filter(_.level > 0).map(_.asInstanceOf[TemporalExpr].e) match {
     case Nil => True
     case e1 :: Nil => e1
-    case es => And(es)
-  }
-
-  private def createNext(term: Expr, level: Int): Expr = level match {
-    case 0 => term
-    case 1 => N(term)
-    case _ => createNext(N(term), level - 1)
+    case es => And(es.toSet)
   }
 
 }

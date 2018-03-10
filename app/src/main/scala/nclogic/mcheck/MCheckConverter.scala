@@ -1,7 +1,7 @@
 package nclogic.mcheck
 
 import nclogic.model.HistoryGraph
-import nclogic.model.expr.{Neg, TemporalExpr, Term}
+import nclogic.model.expr.{Neg, TemporalExpr, Var}
 
 object MCheckConverter {
 

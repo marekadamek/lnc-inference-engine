@@ -1,18 +1,19 @@
 package nclogic
 
 import nclogic.model.HistoryGraph
+import nclogic.model.converters.CnfConverter
 import nclogic.model.expr._
 import nclogic.sat.Sat
 
 object CodeTest extends App {
 
-  val a = Term("a")
-  val b = Term("b")
+  val a = Var("a")
+  val b = Var("b")
 
   val formula = (!a -> N(N(b))) & (!b -> N(N(a)))
   val from = !a & !b & N(a) & N(b)//a
 
-  val sat = Sat.solve(formula.cnf)
+  val sat = Sat.solve(CnfConverter.convert(formula))
   val graph = HistoryGraph(sat)
 
 

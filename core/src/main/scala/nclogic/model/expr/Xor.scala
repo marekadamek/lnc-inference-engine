@@ -5,9 +5,7 @@ case class Xor(e1: Expr, e2: Expr) extends Expr {
 
   def isAtomic = false
 
-  def simplify = (e1 & !e2) | (!e1 & e2)
-
-  override def replaceVariables(s: SubstitutionSet): Expr = Impl(e1.replaceVariables(s), e2.replaceVariables(s))
+  def simplify(implicit level: Int) = ((e1 & !e2) | (!e1 & e2)).simplify
 
   override def baseTerms: Set[Expr] = e1.baseTerms ++ e2.baseTerms
 

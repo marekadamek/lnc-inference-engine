@@ -1,26 +1,37 @@
 package nclogic.sat
 
-import nclogic._
 import nclogic.model.expr._
 
 object Sat {
 
-  private def isContradictory(andList: List[List[Expr]]) = {
+  private def isContradictory(andList: Set[Set[Expr]]) = {
     if (andList.exists(_.isEmpty)) true
     else {
-      val singles = andList.filter(_.lengthCompare(1) == 0).map(_.head)
-      singles.contains(False) || singles.exists(e => singles.contains(Neg(e)))
+      val singles = andList.filter(_.size == 1).map(_.head)
+      singles.contains(False) ||
+        singles.exists(e1 => singles.exists(e2 => Expr.areContradictoryTerms(e1, e2)))
     }
   }
 
-  def solve(expr: Expr): Expr = expr :> makeSet :> solve :> toOr
+  def solve(expr: Expr): Expr = toExpr(solve(makeSet(expr)))
 
-  private def solve(cnf: List[List[Expr]]): List[List[Expr]] = {
+  def matches(e1: Expr, e2: Expr): Boolean = (e1, e2) match {
+    case (t1@Var(_), t2@Var(_)) => t1 == t2
+    case (n1@Neg(_), n2@Neg(_)) => n1 == n2
+    case (n1@Next(_), n2@Next(_)) => n1 == n2
+    case _ => false
+  }
 
-    def solve(andList: List[List[Expr]], terms: List[Expr]): List[List[Expr]] = {
-      andList match {
-        case Nil => List(terms)
-        case s if isContradictory(s) => Nil
+  private def contains(terms: Set[Expr], e: Expr): Boolean = terms.exists(t => matches(t, e))
+
+  private def solve(cnf: Set[Set[Expr]]): Set[Set[Expr]] = {
+
+    def solve(andList: Set[Set[Expr]], terms: Set[Expr]): Set[Set[Expr]] = {
+      andList.toList match {
+        case Nil =>
+          Set(terms)
+        case s if isContradictory(s.toSet) =>
+          Set.empty
         case _ =>
           val l = andList.head.headOption.map({
             case Neg(e) => e
@@ -29,31 +40,39 @@ object Sat {
 
           val neg = Neg(l).simplify
           //assign true
-          val tal = andList.filterNot(_.contains(l)).map(and => and.filterNot(_ == neg))
+          val talResults = {
+            val tal = andList
+              .filterNot(and => contains(and, l))
+              .map(and => and.filterNot(_ == neg))
+
+            solve(tal, terms + l)
+          }
           //assign neg
-          val nal = andList.filterNot(_.contains(neg)).map(and => and.filterNot(_ == l))
-          solve(tal, terms ++ List(l)) ++ solve(nal, terms ++ List(neg))
+          val nalResults = {
+            val nal = andList
+              .filterNot(and => contains(and, neg))
+              .map(and => and.filterNot(_ == l))
+
+            solve(nal, terms + neg)
+          }
+
+          talResults ++ nalResults
       }
     }
 
-
-    def isFalse(and: List[Expr]) = {
-      and.exists(e1 => and.exists(e2 => e1 == Neg(e2).simplify))
-    }
-
-    solve(cnf, List.empty)
-      .filterNot(isFalse)
+    solve(cnf, Set.empty)
+      .filterNot(_ == False)
   }
 
-  private def makeSet(expr: Expr): List[List[Expr]] = expr match {
+  private def makeSet(expr: Expr): Set[Set[Expr]] = expr match {
     case And(es) => es flatMap makeSet
-    case Or(es) => List((es flatMap makeSet).flatten)
-    case x: Expr => List(List(x))
+    case Or(es) => Set((es flatMap makeSet).flatten)
+    case x: Expr => Set(Set(x))
   }
 
-  private def toOr(ands: List[List[Expr]]): Expr = {
+  private def toExpr(ands: Set[Set[Expr]]): Expr = {
     if (ands.isEmpty) False
-    else Or(ands map And).simplify
+    else Or(ands.map(a => And(a)).toSet).simplify
   }
 
 }
