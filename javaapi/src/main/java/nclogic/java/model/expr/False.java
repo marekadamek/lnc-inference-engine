@@ -1,6 +1,6 @@
 package nclogic.java.model.expr;
 
-public class False implements Expr {
+public class False extends Expr {
 
     private static final False ins = new False();
 

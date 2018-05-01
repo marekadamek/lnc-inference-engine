@@ -3,7 +3,7 @@ package nclogic
 import nclogic.binary.BinaryValidator.toBool
 import nclogic.binary.{BinaryGenerator, BinaryValidator, BinaryValidatorWithCorrection}
 import nclogic.model.converters.CnfConverter
-import nclogic.java.model.expr._
+import nclogic.model.expr._
 import nclogic.model.{BinaryGraph, HistoryGraph, HistoryGraphUtils}
 import nclogic.sat.Sat
 

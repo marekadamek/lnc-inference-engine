@@ -1,4 +1,4 @@
-package nclogic.java.model.expr
+package nclogic.model.expr
 
 import org.scalatest.{FlatSpec, Matchers}
 

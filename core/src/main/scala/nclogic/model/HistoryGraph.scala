@@ -1,6 +1,8 @@
 package nclogic.model
 
+import nclogic.model.converters.CnfConverter
 import nclogic.model.expr._
+import nclogic.sat.Sat
 
 
 case class Edge(from: Expr, to: Expr)
@@ -64,6 +66,7 @@ case class HistoryGraph(private val valuationsExpr: Expr) {
   }
 
   def findPath(from: Expr, to: Expr): List[Expr] = {
+    val fromSimplified = from.simplify
     val toSimplified = to.simplify
     def bfs(todo: List[List[Expr]]): List[Expr] = todo match {
       case Nil => Nil
@@ -77,7 +80,7 @@ case class HistoryGraph(private val valuationsExpr: Expr) {
         }
     }
 
-    val startNodes = getMatchingFromNodes(from)
+    val startNodes = getMatchingFromNodes(fromSimplified)
     bfs(startNodes.toList.map(List(_)))
   }
   private def generateLastOnesList(lastOnes: List[Expr]): List[Expr] = {
@@ -114,4 +117,8 @@ case class HistoryGraph(private val valuationsExpr: Expr) {
     And(filtered)
   }
 
+}
+
+object HistoryGraph {
+  def fromBaseExpr(expr: Expr): HistoryGraph = HistoryGraph(Sat.solve(CnfConverter.convert(expr)))
 }

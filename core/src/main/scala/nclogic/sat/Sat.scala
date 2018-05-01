@@ -1,6 +1,6 @@
 package nclogic.sat
 
-import nclogic.java.model.expr._
+import nclogic.model.expr._
 
 object Sat {
 

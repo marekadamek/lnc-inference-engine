@@ -1,7 +1,7 @@
 package nclogic.binary
 
 import nclogic.model.BinaryGraph
-import nclogic.java.model.expr._
+import nclogic.model.expr._
 
 object BinaryValidator {
 

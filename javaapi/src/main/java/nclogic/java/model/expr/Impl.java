@@ -1,6 +1,6 @@
 package nclogic.java.model.expr;
 
-public class Impl implements Expr {
+public class Impl extends Expr {
 
     private final nclogic.model.expr.Impl impl;
     private final Expr e1;
@@ -10,6 +10,12 @@ public class Impl implements Expr {
         this.e1 = e1;
         this.e2 = e2;
         impl = new nclogic.model.expr.Impl(e1.getScalaExpr(), e2.getScalaExpr());
+    }
+
+    public Impl(nclogic.model.expr.Impl impl) {
+        this.impl = impl;
+        this.e1 = ToJavaExprConverter.convert(impl.e1());
+        this.e2 = ToJavaExprConverter.convert(impl.e2());
     }
 
     public Expr getE1() {

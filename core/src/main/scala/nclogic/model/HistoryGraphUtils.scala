@@ -1,6 +1,6 @@
 package nclogic.model
 
-import nclogic.java.model.expr.Expr
+import nclogic.model.expr.Expr
 
 
 object HistoryGraphUtils {

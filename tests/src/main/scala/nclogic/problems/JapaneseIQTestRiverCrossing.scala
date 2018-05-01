@@ -2,8 +2,8 @@ package nclogic.problems
 
 import nclogic.model.HistoryGraph
 import nclogic.model.converters.CnfConverter
-import nclogic.java.model.expr.Expr._
-import nclogic.java.model.expr.{C, _}
+import nclogic.model.expr.Expr._
+import nclogic.model.expr.{C, _}
 import nclogic.sat.Sat
 
 /**

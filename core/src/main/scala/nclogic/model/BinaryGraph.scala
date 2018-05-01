@@ -1,6 +1,6 @@
 package nclogic.model
 
-import nclogic.java.model.expr._
+import nclogic.model.expr._
 
 
 case class BinaryGraph(private val historyGraph: HistoryGraph) {

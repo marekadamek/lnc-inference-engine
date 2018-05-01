@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class And implements Expr {
+public class And extends Expr {
 
     private final nclogic.model.expr.And and;
     private final Set<Expr> es;
@@ -22,6 +22,11 @@ public class And implements Expr {
 
     public And(Expr... es) {
         this(new HashSet<>(Arrays.asList(es)));
+    }
+
+    public And(nclogic.model.expr.And and) {
+        this.and = and;
+        es = ToJavaExprConverter.convertSet(and.es());
     }
 
     public Set<Expr> getEs() {

@@ -2,7 +2,7 @@ package nclogic
 
 import nclogic.binary.{BinaryGenerator, BinaryValidator, CRC}
 import nclogic.model.converters.CnfConverter
-import nclogic.java.model.expr._
+import nclogic.model.expr._
 import nclogic.model.{BinaryGraph, HistoryGraph}
 import nclogic.sat.Sat
 

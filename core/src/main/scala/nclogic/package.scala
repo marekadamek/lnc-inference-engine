@@ -1,5 +1,5 @@
 import nclogic.model.converters.CnfConverter
-import nclogic.java.model.expr.{Expr, False, Neg}
+import nclogic.model.expr.{Expr, False, Neg}
 import nclogic.sat.Sat
 
 package object nclogic {

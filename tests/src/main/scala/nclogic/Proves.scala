@@ -1,6 +1,6 @@
 package nclogic
 
-import nclogic.java.model.expr._
+import nclogic.model.expr._
 
 object Proves extends App {
 

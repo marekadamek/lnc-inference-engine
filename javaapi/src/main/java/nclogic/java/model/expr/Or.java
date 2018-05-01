@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class Or implements Expr {
+public class Or extends Expr {
 
     private final nclogic.model.expr.Or or;
     private final Set<Expr> es;
@@ -22,6 +22,12 @@ public class Or implements Expr {
 
     public Or(Expr... es) {
         this(new HashSet<>(Arrays.asList(es)));
+    }
+
+
+    public Or(nclogic.model.expr.Or or) {
+        this.or = or;
+        es = ToJavaExprConverter.convertSet(or.es());
     }
 
     public Set<Expr> getEs() {

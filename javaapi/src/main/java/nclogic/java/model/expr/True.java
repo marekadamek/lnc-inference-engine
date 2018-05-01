@@ -1,6 +1,6 @@
 package nclogic.java.model.expr;
 
-public class True implements Expr {
+public class True extends Expr {
 
     private static final True ins = new True();
 

@@ -1,6 +1,6 @@
 package nclogic.model.converters
 
-import nclogic.java.model.expr.{And, Expr, Or}
+import nclogic.model.expr.{And, Expr, Or}
 
 object CnfConverter {
 

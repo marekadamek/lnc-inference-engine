@@ -1,6 +1,6 @@
 package nclogic.java.model.expr;
 
-public class Var implements Expr {
+public class Var extends Expr {
 
     private final nclogic.model.expr.Var neg;
     private final String name;

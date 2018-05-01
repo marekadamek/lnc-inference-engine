@@ -1,0 +1,18 @@
+#FARMER DILEMMA
+
+# f - farmer
+# w - wolf
+# s - sheep
+# c - cabbage
+# b - boat
+
+
+G((f <-> w) | (s <-> !w))
+& G((f <-> s) | (s <-> !c))
+& (f -> !((!w & N(w)) | (!s & N(s)) | (!c & N(c))))
+& (!f -> !((w & N(!w)) | (s & N(!s)) | (c & N(!c))))
+& C(f)
+& ((C(w) | C(s) | C(c)) -> C(f))
+& (C(w) -> (!C(s) & !C(c)))
+& (C(s) -> (!C(w) & !C(c)))
+& (C(c) -> (!C(w) & !C(s)))

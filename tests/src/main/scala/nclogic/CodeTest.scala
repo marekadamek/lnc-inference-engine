@@ -2,7 +2,7 @@ package nclogic
 
 import nclogic.model.HistoryGraph
 import nclogic.model.converters.CnfConverter
-import nclogic.java.model.expr._
+import nclogic.model.expr._
 import nclogic.sat.Sat
 
 object CodeTest extends App {

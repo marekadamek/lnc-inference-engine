@@ -1,6 +1,6 @@
 package nclogic.model.converters
 
-import nclogic.java.model.expr._
+import nclogic.model.expr._
 import org.scalatest._
 
 
