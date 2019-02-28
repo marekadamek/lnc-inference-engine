@@ -1,68 +1,46 @@
 package nclogic.model.expr
 
 case class Or(es: Set[Expr]) extends Expr {
-  override def toString: String = "(" + es.map(_.toString).mkString(" | ") + ")"
 
-  def isAtomic = false
-
-  private def isContradictory = {
-    val atomics = es.filter(_.isAtomic)
-    atomics.exists(e1 => atomics.exists(e2 => Expr.areContradictoryTerms(e1, e2)))
+  override lazy val toString: String = {
+    if (es.size == 1) es.head.toString
+    else s"(${es.mkString(" | ")})"
   }
 
-  def simplify(implicit level: Int): Expr = {
-    if (es.size == 1) es.head.simplify
-    else {
-      if (es.contains(True) || isContradictory) True
-      else {
-        var simplified = es - False
-        val parts = simplified.map {
-          case e if e.isAtomic => e
-          case e => e.simplify
-        }
+  override lazy val boolString: String = {
+    if (es.size == 1) es.head.boolString
+    else s"(${es.map(_.boolString).mkString(" | ")})"
+  }
 
-        val (ors, rest) = parts.partition(_.isInstanceOf[Or])
-        simplified = ors.flatMap(_.asInstanceOf[Or].es) ++ rest
-
-        // p | (p & q) <=> p
-        simplified = simplified.find(_.isAtomic) match {
-          case Some(t) => simplified.filterNot(s => s.isInstanceOf[And] && s.asInstanceOf[And].es.contains(t))
-          case None => simplified
-        }
-
-        simplified.filter(_.isInstanceOf[Finally]).foreach(a => {
-          val e = Expr.getNestedTerm(a.asInstanceOf[Finally])
-          simplified = simplified.filterNot {
-            case term: Var => e == term
-            case neg: Neg => e == neg
-            case te: Next => e == Expr.getNestedTerm(te)
-            case _ => false
-          }
-        })
-
-        if (es == simplified) this
-        else Or(simplified).simplify
-      }
+  lazy val simplify: Expr = {
+    val simplified = es.map(_.simplify).foldLeft(Set.empty[Expr]) {
+      case (set, Or(e)) => set ++ e
+      case (set, False) => set
+      case (set, Next(False, _)) => set
+      case (set, e) => set + e
     }
 
+    val containsTrue = simplified.exists {
+      case True => true
+      case Next(True, _) => true
+      case _ => false
+    }
+
+    if (containsTrue || Expr.isContradictory(simplified))
+      True
+    else {
+      simplified.size match {
+        case 0 => False
+        case 1 => simplified.head
+        case _ => Or(simplified)
+      }
+    }
   }
 
-  override lazy val getTerms: Set[Expr] = es.flatMap(_.getTerms)
-
-  override def equals(o: Any): Boolean = o match {
-    case Or(others) => es == others
-    case _ => false
-  }
-
-  override def hashCode(): Int = es.map(_.hashCode()).sum
-
-  override def baseTerms: Set[Expr] = es.flatMap(_.baseTerms)
-
-  override def level: Int = es.map(_.level).max
 }
 
 object Or {
-  def apply(es: Expr*): Or = Or(es.toSet)
+  def apply(es: Expr*): Expr = if (es.size == 1) es.head else Or(es.toSet)
 
   def formSet[T <: Expr](es: Set[T]): Or = Or(es.map(_.asInstanceOf[Expr]))
 }

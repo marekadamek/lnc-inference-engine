@@ -1,6 +1,7 @@
 package time
 
-case class TimeMeasure[R](nanoTime: Long, result: R) {
-  lazy val microTime: Long = nanoTime / 1000
-  lazy val millis: Long = microTime / 1000
+case class TimeMeasure(nanoTime: Long) {
+  lazy val microTime: Float = nanoTime / 1000f
+  lazy val millis: Float = microTime / 1000f
+  lazy val seconds: Float = millis / 1000f
 }

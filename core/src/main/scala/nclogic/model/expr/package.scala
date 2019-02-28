@@ -2,11 +2,11 @@ package nclogic.model
 
 package object expr {
 
-  def N(e: Expr) = e.next
+  def N(level: Int, e: Expr): Expr = if (level == 0) e else Next(e, level)
 
-  def C(e: Expr) = e.change
+  def N(e: Expr): Expr = N(1, e)
 
-  def G(e: Expr) = e.globally
+  def C(level: Int, e: Expr): Expr = Change(e, level)
 
-  def F(e: Expr) = e.finallyExpr
+  def C(e: Expr): Expr = C(1, e)
 }

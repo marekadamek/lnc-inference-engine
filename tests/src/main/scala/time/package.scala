@@ -1,10 +1,10 @@
 package object time {
 
-  def measureTime[R](block: => R): TimeMeasure[R] = {
+  def measureTime[R](block: => R): (R, TimeMeasure) = {
     val t0 = System.nanoTime()
-    val result = block    // call-by-name
+    val result = block
     val t1 = System.nanoTime()
-    TimeMeasure(t1 - t0, result)
+    (result, TimeMeasure(t1 - t0))
   }
 
 }

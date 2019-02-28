@@ -18,43 +18,53 @@ class AndSpec extends FlatSpec with Matchers {
     actual shouldEqual expected
   }
 
-  "And" should "simplify 2" in {
+  it should "simplify 2" in {
     val given = And(cA)
     val expected = cA
     val actual = given.simplify
     actual shouldEqual expected
   }
 
-  "And" should "simplify 3" in {
+  it should "simplify 3" in {
     val given = And(cA, cB, cC, cD, cE, cF, False)
     val expected = False
     val actual = given.simplify
     actual shouldEqual expected
   }
 
-  "And" should "simplify 4" in {
+  it should "simplify 4" in {
     val given = And(cA, cB, cC, cD, cE, cF, True)
     val expected = And(cA, cB, cC, cD, cE, cF)
     val actual = given.simplify
     actual shouldEqual expected
   }
 
-  "And" should "simplify 5" in {
-    val given = And(cA, Globally(cA), Next(cA), cD, cE, cF)
-    val expected = And(Globally(cA), cD, cE, cF)
+  it should "simplify 5" in {
+    val given = And(cA, cB, cC, cD, cE, cF, !cA)
+    val expected = False
     val actual = given.simplify
-    actual shouldEqual expected.simplify
+    actual shouldEqual expected
   }
 
-  "And" should "simplify 6" in {
-    val given = And(cA, Or(cA, cB))
-    val expected = cA
+  it should "simplify 6" in {
+    val given = And(N(cA), cB, cC, cD, cE, cF, !N(cA))
+    val expected = False
     val actual = given.simplify
-    actual shouldEqual expected.simplify
+    actual shouldEqual expected
   }
 
-}
+  it should "simplify 7" in {
+    val given = cA & (cB | cC)
+    val expected = (cA & cB) | (cA & cC)
+    val actual = given.simplify
+    actual shouldEqual expected
+  }
 
-object AndSpec {
+  //  it should "simplify 8" in {
+  //    val given = cA & (cA | cB)
+  //    val expected = cA
+  //    val actual = given.simplify
+  //    actual shouldEqual expected.simplify
+  //  }
 
 }

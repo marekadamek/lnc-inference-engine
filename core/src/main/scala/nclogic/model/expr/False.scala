@@ -1,11 +1,9 @@
 package nclogic.model.expr
 
 case object False extends Expr {
-  override def simplify(implicit level: Int): Expr = this
+  override val simplify: Expr = this
 
-  override def isAtomic: Boolean = true
+  override val toString: String = "FALSE"
 
-  override def baseTerms: Set[Expr] = Set.empty
-
-  override def level: Int = 0
+  override def boolString: String = toString
 }

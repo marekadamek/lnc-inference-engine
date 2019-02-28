@@ -9,12 +9,8 @@ object Build extends Build {
   )
 
   val dependencies = Seq(
-    "org.scalatest" % "scalatest_2.10" % "2.2.4" % "test"
-  )
-
-  val javaapiDependencies = Seq(
-    "junit" % "junit" % "4.12",
-    "com.novocode" % "junit-interface" % "0.10" % "test"
+    "org.scalatest" % "scalatest_2.10" % "2.2.4" % "test",
+    "com.typesafe" % "config" % "1.2.1"
   )
 
   lazy val core = project
@@ -24,18 +20,11 @@ object Build extends Build {
       libraryDependencies ++= dependencies
     )
 
-  lazy val javaapi = project
-    .in(file("javaapi"))
-    .dependsOn(core)
-    .settings(
-      libraryDependencies ++= javaapiDependencies
-    )
-
   lazy val tests = project
     .in(file("tests"))
     .dependsOn(core)
 
   lazy val root = project
     .in(file("."))
-    .aggregate(core, javaapi, tests)
+    .aggregate(core, tests)
 }

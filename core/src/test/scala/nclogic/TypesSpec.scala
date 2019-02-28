@@ -15,9 +15,9 @@ class TypesSpec extends FlatSpec with Matchers {
   }
 
   "Neg" should "be valid" in {
-    Neg(True).simplify shouldEqual False
-    Neg(False).simplify shouldEqual True
-    Neg(Neg(Var("a"))).simplify shouldEqual Var("a")
+    Not(True).simplify shouldEqual False
+    Not(False).simplify shouldEqual True
+    Not(Not(Var("a"))).simplify shouldEqual Var("a")
   }
 
   "Or" should "be valid" in {
@@ -32,24 +32,24 @@ class TypesSpec extends FlatSpec with Matchers {
   }
 
   "Impl" should "be valid" in {
-    Impl(Var("a"), Var("b")).simplify shouldEqual Or(Neg(Var("a")), Var("b"))
+    Impl(Var("a"), Var("b")).simplify shouldEqual Or(Not(Var("a")), Var("b"))
   }
 
   "Eq" should "be valid" in {
     // a <=> b -> (!a | b) & (a | !b)
-    Eq(Var("a"), Var("b")).simplify shouldEqual And(Or(Neg(Var("a")), Var("b")), Or(Var("a"), Neg(Var("b")))).simplify
+    Eq(Var("a"), Var("b")).simplify shouldEqual And(Or(Not(Var("a")), Var("b")), Or(Var("a"), Not(Var("b")))).simplify
   }
 
   "C" should "simplify" in {
-    Change(Neg(Var("a"))).simplify shouldEqual Change(Var("a")).simplify
+    C(Not(Var("a"))).simplify shouldEqual C(Var("a")).simplify
   }
 
   "N" should "simplify" in {
-    Next(And(Var("a"), Var("b"))).simplify shouldEqual And(Next(Var("a")), Next(Var("b"))).simplify
-    Next(Or(Var("a"), Var("b"))).simplify shouldEqual Or(Next(Var("a")), Next(Var("b"))).simplify
-    Next(Impl(Var("a"), Var("b"))).simplify shouldEqual Or(Neg(Next(Var("a"))), Next(Var("b"))).simplify
-    Next(Eq(Var("a"), Var("b"))).simplify shouldEqual Eq(Next(Var("a")), Next(Var("b"))).simplify
-    Next(Neg(False)).simplify shouldEqual Neg(Next(False)).simplify
+    N(And(Var("a"), Var("b"))).simplify shouldEqual And(N(Var("a")), N(Var("b"))).simplify
+    N(Or(Var("a"), Var("b"))).simplify shouldEqual Or(N(Var("a")), N(Var("b"))).simplify
+    N(Impl(Var("a"), Var("b"))).simplify shouldEqual Or(Not(N(Var("a"))), N(Var("b"))).simplify
+    N(Eq(Var("a"), Var("b"))).simplify shouldEqual Eq(N(Var("a")), N(Var("b"))).simplify
+    N(Not(False)).simplify shouldEqual Not(N(False)).simplify
   }
 
 

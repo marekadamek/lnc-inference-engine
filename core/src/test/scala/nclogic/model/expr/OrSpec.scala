@@ -39,12 +39,19 @@ class OrSpec extends FlatSpec with Matchers {
     actual shouldEqual expected
   }
 
-  it should "simplify 6" in {
-    val given = Or(cA, And(cA, cB))
-    val expected = cA
+  it should "simplify 5" in {
+    val given = Or(cA, cB, cC, cD, cE, cF, !cA)
+    val expected = True
     val actual = given.simplify
-    actual shouldEqual expected.simplify
+    actual shouldEqual expected
   }
+
+//  it should "simplify 6" in {
+//    val given = Or(cA, And(cA, cB))
+//    val expected = cA
+//    val actual = given.simplify
+//    actual shouldEqual expected.simplify
+//  }
 
 }
 

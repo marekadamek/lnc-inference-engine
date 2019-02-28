@@ -1,35 +1,37 @@
 package nclogic.model.expr
 
-case class Next(e: Expr) extends TemporalExpr {
-  override def toString = s"N($e)"
+case class Next(e: Expr, level: Int) extends Expr {
+  override lazy val toString: String = {
+    val d = if (level > 1) s"^$level" else ""
+    s"N$d($e)"
+  }
 
-  def isAtomic = e.isAtomic
+  def ^(l: Int) = Next(e, level + l)
 
   /**
     * N(a | b) <=> N(a) | N(b)
     * N(a & b) <=> N(a) & N(b)
     * N(a => b) <=> N(a) => N(b)
     * N(a <=> b) <=> N(a) <=> N(b)
-    * !N(a) <=> N(!a) (implementation in Neg)
+    * N(!a) <=> !N(a) (implementation in Neg)
     */
-  def simplify(implicit level: Int): Expr = e match {
-    case _ if e.isAtomic => this
-    case Or(es) => Or(es.map(_.next)).simplify
-    case And(es) => And(es.map(_.next)).simplify
-    case Impl(p, q) => Impl(Next(p), Next(q)).simplify
-    case Eq(p, q) => Eq(Next(p), Next(q)).simplify
-    case _ => Next(e.simplify).simplify
+  lazy val simplify: Expr = {
+    if (level == 0) e.simplify
+    else {
+      e match {
+        case Var(_) => this
+        case Not(x) => Not(Next(x, level)).simplify
+        case Next(x, l) => Next(x, l + 1).simplify
+        case Or(es) => Or(es.map(Next(_, level)).map(_.asInstanceOf[Expr])).simplify
+        case And(es) => And(es.map(Next(_, level)).map(_.asInstanceOf[Expr])).simplify
+        case Impl(p, q) => Impl(Next(p, level), Next(q, level)).simplify
+        case Eq(p, q) => Eq(Next(p,level), Next(q,level)).simplify
+        case _ => Next(e.simplify,level).simplify
+      }
+    }
   }
 
-  override def baseTerms: Set[Expr] = e.baseTerms
-
-  override val level: Int = e.level + 1
-}
-
-object Next {
-  def createNext(term: Expr, level: Int): Expr = level match {
-    case 0 => term
-    case 1 => N(term)
-    case _ => createNext(N(term), level - 1)
+  override def boolString: String = {
+    s"X_${level}_${e.boolString}"
   }
 }

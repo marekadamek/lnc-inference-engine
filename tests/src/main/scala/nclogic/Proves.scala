@@ -1,6 +1,8 @@
 package nclogic
 
+import nclogic.model.LNC
 import nclogic.model.expr._
+import nclogic.sat.{TableAux, TableAux3}
 
 object Proves extends App {
 
@@ -35,7 +37,7 @@ object Proves extends App {
     , N(a) <-> (a <-> !C(a))
     , C(a) <-> (a <-> !N(a))
     , C(a & b) -> (C(a) | C(b))
-    , C(a <-> b) -> (C(a) ^ C(b))
+    , C(a <-> b) -> !(C(a) <-> C(b))
   )
 
   val counterTautologies = List(
@@ -47,11 +49,17 @@ object Proves extends App {
     , a & !C(a) & C(b) & !C(a -> b)
   )
 
-  val result = time.measureTime {
-    tautologies.forall(isTautology) && counterTautologies.forall(isContraTautology)
+  val (result, tm) = time.measureTime {
+    tautologies.forall(t => {
+      val pf = LNC.prefixFormula(Not(t))
+      !TableAux3.isSatisfiable(pf)
+    }) && counterTautologies.forall(ct => {
+      val pf = LNC.prefixFormula(ct)
+      !TableAux3.isSatisfiable(pf)
+    })
   }
 
-  println("Is ok (?): " + result.result)
-  println("Time (ms): " + result.millis)
+  println("Is ok (?): " + result)
+  println("Time (ms): " + tm.millis)
 }
 
