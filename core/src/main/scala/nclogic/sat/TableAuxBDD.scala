@@ -250,9 +250,9 @@ object TableAuxBDD {
       case Nil => if (acc.isEmpty) True else Expr.and(acc)
       case head :: tail =>
         setTrue(head, term) match {
-          case True => setTrueOr(tail, term, acc)
-          case False => setTrueOr(Nil, term, Set(False))
-          case e if acc.contains(!e) => setTrueOr(Nil, term, Set(False))
+          case True => setTrueAnd(tail, term, acc)
+          case False => setTrueAnd(Nil, term, Set(False))
+          case e if acc.contains(!e) => setTrueAnd(Nil, term, Set(False))
           case e => setTrueAnd(tail, term, acc + e)
         }
     }

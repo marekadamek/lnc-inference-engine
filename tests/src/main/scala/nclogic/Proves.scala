@@ -2,7 +2,7 @@ package nclogic
 
 import nclogic.model.LNC
 import nclogic.model.expr._
-import nclogic.sat.{TableAux, TableAux3}
+import nclogic.sat.TableAuxBDD
 
 object Proves extends App {
 
@@ -52,10 +52,10 @@ object Proves extends App {
   val (result, tm) = time.measureTime {
     tautologies.forall(t => {
       val pf = LNC.prefixFormula(Not(t))
-      !TableAux3.isSatisfiable(pf)
+      !TableAuxBDD.isSatisfiable(pf)
     }) && counterTautologies.forall(ct => {
       val pf = LNC.prefixFormula(ct)
-      !TableAux3.isSatisfiable(pf)
+      !TableAuxBDD.isSatisfiable(pf)
     })
   }
 

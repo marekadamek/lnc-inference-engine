@@ -208,4 +208,9 @@ object NormalFormConverter {
     val ln = convertToLN(e)
     LNC.simplify(ln)
   }
+
+  def convertToNormalForm(e: Expr): Expr = {
+    val ln = convertToLN(e)
+    LNC.simplify(ln)
+  }
 }

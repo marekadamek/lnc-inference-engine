@@ -21,7 +21,7 @@ object TestOpC_Positive extends App with AppConfig {
     println(d + " " + formatter.format(new Date))
     println()
 
-    val (formula, fileName) = TestFormulas.positiveN(n, d)
+    val (formula, fileName) = TestFormulas.positiveC(n, d)
 
     // println(s"Formula: $formula")
 

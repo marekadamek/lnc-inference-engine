@@ -166,10 +166,7 @@ object LNC {
   }
 
   def prefixFormula(e: Expr): Expr = {
-    val cache = mutable.HashMap.empty[Expr, Option[Expr]]
-    val d = depth(e)
-    val base = NormalFormConverter.convert(e)
-    base
+    NormalFormConverter.convert(e)
   }
 
   def prefixFormula2(e: Expr): Expr = {
@@ -199,7 +196,11 @@ object LNC {
           case Not(True) => False
           case Not(False) => True
           case Not(Not(x)) => loop(x)
-          case Not(x) => Not(loop(x))
+          case Not(x) => loop(x) match {
+            case True => False
+            case False => True
+            case x1 => Not(x1)
+          }
 
           case And(es) =>
             val simplified = es.map(loop).foldLeft(Set.empty[Expr]) {
@@ -288,7 +289,11 @@ object LNC {
           case Not(True) => False
           case Not(False) => True
           case Not(Not(x)) => loop(x)
-          case Not(x) => Not(loop(x))
+          case Not(x) => loop(x) match {
+            case True => False
+            case False => True
+            case x1 => Not(x1)
+          }
 
           case And(es) =>
             val eqs = es.filter(_.isInstanceOf[Or])
