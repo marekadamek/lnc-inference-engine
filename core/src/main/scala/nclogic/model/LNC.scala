@@ -267,6 +267,8 @@ object LNC {
           case Next(True, _) => True
           case Next(False, _) => False
 
+          case Next(Next(x, l), l1) => Next(loop(x), l + l1)
+
           case Next(x, l) => Next(loop(x), l)
 
           case Change(_, _) => ???

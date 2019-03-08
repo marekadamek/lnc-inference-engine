@@ -6,7 +6,8 @@ import java.util.Date
 
 import nclogic.AppConfig
 import nclogic.external._
-import nclogic.model.{LNC, NormalFormConverter}
+import nclogic.model.expr.{False, True, Var}
+import nclogic.model.{LNC, NormalFormConverter, PrefixFormulaConverter}
 import time._
 
 object TestOpC_Positive extends App with AppConfig {
@@ -15,47 +16,61 @@ object TestOpC_Positive extends App with AppConfig {
 
   val formatter = new SimpleDateFormat("hh:mm")
 
-  //for (d <- 1z to 40000 by 2000) {
+  //for (d <1 1z to 40000 by 2000) {
   for (d <- 1 to 16 by 1) {
-    println()
+//    println()
     println(d + " " + formatter.format(new Date))
-    println()
+//    println()
 
-    val (formula, fileName) = TestFormulas.positiveC(n, d)
+    val (formula, fileName) = TestFormulas.negativeN(n, d)
 
-    // println(s"Formula: $formula")
+    val solution = PrefixFormulaConverter.getCommonBase(formula) match {
+      case False => None
+      case True => TableAuxFinal(NormalFormConverter.convertToLN(formula)).next()
+      case base =>
+        val baseDnf = TableAuxFinal(base).solveAll
+        TableAuxFinal(NormalFormConverter.convertToLN(formula), baseDnf).next()
+    }
+
+    //println(NormalFormConverter.convertToLN(formula))
+     println(s"Formula: $solution")
 
     //prefix
-    val (prefixFormula, prefixTime) = measureTime {
-      LNC.prefixFormula(formula)
-    }
 
-    //println(s"Prefix formula calculation time (s): ${prefixTime.seconds}, ${LNC.depth(prefixFormula)}")
+//    val (prefixFormula2, prefixTime2) = measureTime {
+//      PrefixFormulaConverter.convert2(formula)
+//    }
+//
+    //println(prefixFormula2)
+   // println("PREFIX2: " + prefixTime2.seconds)
 
-    //semantic table
+   // assert(false)
 
-    val (result, semanticTableTime) = measureTime {
-      TableAuxBDD.solveOne(prefixFormula)
-    }
-
-    println(result.isDefined)
-    println(prefixTime.seconds, semanticTableTime.seconds)
-
-    //cnf
-    //    val cnfDir = config.getString("cnfFilesDir")
-    //    val (_, cnfTime) = measureTime {
-    //      CnfExporter.exportToFile(NormalFormConverter.convertToLN(formula), Paths.get(cnfDir, s"$fileName.cnf"))
-    //    }
-    //    println(cnfTime.seconds)
-    //
-    //    println()
+//    //println(s"Prefix formula calculation time (s): ${prefixTime.seconds}, ${LNC.depth(prefixFormula)}")
+//
+//    //semantic table
+//
+//    val (result, semanticTableTime) = measureTime {
+//      TableAuxBDD2.solveOne(prefixFormula2)
+//    }
+////
+//    println(result.isDefined)
+    //println(prefixTime.seconds)
+//
+//    //cnf
+//        val cnfDir = config.getString("cnfFilesDir")
+//        val (map, cnfTime) = measureTime {
+//          val forSAT = LNC.simplify(NormalFormConverter.moveNInside(prefixFormula2))
+//          CnfExporter.exportToFile(forSAT, Paths.get(cnfDir, s"$fileName.cnf"))
+//        }
+//        println(cnfTime.seconds)
 
     //
     //    //pltl
-    val pltlDir = config.getString("pltlFilesDir")
-    val (_, pltlTime) = measureTime {
-      PltlExporter.convert(NormalFormConverter.convertToLN(formula), Paths.get(pltlDir, s"$fileName.pltl"))
-    }
+//    val pltlDir = config.getString("pltlFilesDir")
+//    val (_, pltlTime) = measureTime {
+//      PltlExporter.convert(NormalFormConverter.convertToLN(formula), Paths.get(pltlDir, s"$fileName.pltl"))
+//    }
     //println(s"PLTL export time (ms): ${pltlTime.seconds}")
 
     //pltl

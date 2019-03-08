@@ -5,9 +5,7 @@ import nclogic.model.expr._
 
 import scala.collection.mutable
 
-case class Node3(terms: Set[Expr], e: Expr)
-
-case class TableAuxBDD(formula: Expr) {
+case class TableAuxBDD2(formula: Expr) {
   val depth = LNC.depth(formula)
   val graph = new Graph[Expr, Set[Set[Expr]]]
   var visited = mutable.Set.empty[Expr]
@@ -104,16 +102,12 @@ case class TableAuxBDD(formula: Expr) {
     if (!visited(parent)) {
       visited += parent
 
-      if (parent == True) {
-        println()
-      }
-
       val all = solveAll(parent)
 
 
       all.foreach {
         case (e, edges) =>
-          graph.addEdge(parent, advance(e), edges)
+          graph.addEdge(parent, advance(e) & formula, edges)
       }
     }
   }
@@ -121,7 +115,7 @@ case class TableAuxBDD(formula: Expr) {
 
   val visited2 = mutable.Set.empty[Expr]
 
-  private def calculateNextBase(): Option[Expr] = {
+  def next(): Option[Expr] = {
     var result = Option.empty[Expr]
 
     while (toDo.nonEmpty && result.isEmpty) {
@@ -131,19 +125,24 @@ case class TableAuxBDD(formula: Expr) {
       if (!visited2.contains(parent)) {
         visited2 += parent
 
-        parent match {
-          case True =>
-            result = Some(Expr.and(path.reverse.zipWithIndex.map {
-              case (set, i) => N(i, Expr.and(set))
-            }.toSet))
-          case _ =>
-            expand(parent)
+        if (parent == True)
+          result = Some(Expr.and(path.reverse.zipWithIndex.map {
+            case (set, i) => N(i, Expr.and(set))
+          }.toSet))
 
-            for {
-              (child, solutions) <- graph.getSuccessors(parent)
-            } {
-              toDo = (solutions.head :: path, child) :: toDo
-            }
+        else if (path.length == depth + 1) {
+          val all = solveAll(parent)
+
+          result =Some(True)
+
+        } else {
+          expand(parent)
+
+          for {
+            (child, solutions) <- graph.getSuccessors(parent)
+          } {
+            toDo = (solutions.head :: path, child) :: toDo
+          }
         }
       }
     }
@@ -151,99 +150,9 @@ case class TableAuxBDD(formula: Expr) {
     result
   }
 
-
-  val visitedPrefixes = mutable.Map.empty[(Expr, Expr), Boolean]
-
-  def prefix(expr: Expr, d: Int): Expr = {
-
-    def loop(e: Expr): Expr = e match {
-      case True => True
-      case Next(_, l) if l >= d => True
-      case Next(x, l) => Next(x, l + 1)
-      case And(es) => Expr.and(es.map(prefix(_, d)))
-      case _ => Next(e, 1)
-    }
-
-    LNC.basicSimplify(loop(expr))
-  }
-
-  private val successorsMap = mutable.Map.empty[Expr, Set[Expr]]
-
-  private def isVar(e: Expr) = e match {
-    case Var(_) | Not(Var(_)) => true
-    case _ => false
-  }
-
-  private def getSuccessors(expr: Expr): Set[Expr] = {
-    successorsMap.getOrElseUpdate(expr, {
-
-      val suffix = LNC.suffix(expr)
-      var toDo = List((formula, suffix, 0))
-
-      val lastTerms = mutable.Set.empty[Expr]
-
-      while (toDo.nonEmpty) {
-        val (parent, current, l) = toDo.head
-        toDo = toDo.tail
-
-        expand(parent)
-
-        val next = if (l == depth) {
-          lastTerms ++= graph.getSuccessors(parent).map(_._2.head).map(set => N(depth, Expr.and(set)))
-          Nil
-        } else {
-          val vars = current match {
-            case True | Next(_, _) => Set.empty
-            case _ if isVar(current) => Set(current)
-            case And(es) => es.filter(isVar)
-          }
-
-          graph.getSuccessors(parent).filter(_._2.exists(e => !Expr.isContradictory(e ++ vars))).map(_._1)
-        }
-        val advanced = advance(current)
-        toDo = next.map(n => (n, advanced, l + 1)) ::: toDo
-      }
-
-
-      lastTerms.map(lt => Expr.and(suffix, lt)).toSet
-    })
-  }
-
-  def checkSuffixes(base: Expr): Boolean = {
-      var toDo = List((List(base), 0))
-      var ok = false
-
-      while (toDo.nonEmpty && !ok) {
-        val (path, i) = toDo.head
-        toDo = toDo.tail
-
-        if (i == depth || path.tail.contains(path.head)) {
-          ok = true
-        } else {
-          toDo = getSuccessors(path.head).toList.map(next => (next :: path, i + 1)) ::: toDo
-        }
-      }
-
-      ok
-  }
-
-  def getNext: Option[Expr] = {
-    var base = calculateNextBase()
-    var found = false
-
-    while (base.nonEmpty && !found) {
-      found = checkSuffixes(base.get)
-      if (!found) {
-        base = calculateNextBase()
-      }
-    }
-
-    base
-  }
-
 }
 
-object TableAuxBDD {
+object TableAuxBDD2 {
 
   private def setTrueAnd(es: List[Expr], term: Expr, acc: Set[Expr]): Expr = {
     es match {
@@ -271,8 +180,13 @@ object TableAuxBDD {
     }
   }
 
-  def setTrue(e: Expr, v: Expr): Expr = {
-    val result = e match {
+  def memoize[I, O](f: I => O): I => O = {
+    val cache = new mutable.HashMap[I, O]()
+    (key: I) => cache.getOrElseUpdate(key, f(key))
+  }
+
+  val setTrue: ((Expr, Expr)) => Expr = memoize {
+    case (e: Expr, v: Expr) => e match {
       case True => True
       case False => False
 
@@ -314,14 +228,12 @@ object TableAuxBDD {
           case (x1, x2) => Eq(x1, x2)
         }
     }
-
-    result
   }
 
 
   def isSatisfiable(expr: Expr): Boolean = solveOne(expr).isDefined
 
-  def solveOne(expr: Expr): Option[Expr] = TableAuxBDD(expr).getNext
+  def solveOne(expr: Expr): Option[Expr] = TableAuxBDD2(expr).next()
 
   def solveAll(expr: Expr): List[Expr] = ???
 }

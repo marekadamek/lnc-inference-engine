@@ -9,9 +9,9 @@ trait Expr {
 
   def boolString: String
 
-  def &(e: Expr) = And(this, e)
+  def &(e: Expr): Expr = And(this, e)
 
-  def |(e: Expr) = Or(this, e)
+  def |(e: Expr): Expr = Or(this, e)
 
   def unary_! = this match {
     case Not(x) => x

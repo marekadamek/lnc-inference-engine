@@ -1,6 +1,5 @@
 package nclogic.sat
 
-import com.sun.java.swing.plaf.windows.WindowsTreeUI.ExpandedIcon
 import nclogic.model.expr._
 import nclogic.model.{LNC, NormalFormConverter}
 
@@ -93,9 +92,6 @@ case class TableAux(expr: Expr) {
     }
   }
 
-  // }
-
-
   private def perms(data: List[List[Expr]]): List[List[Expr]] = data match {
     case Nil => Nil
     case x :: Nil => x.map(v => List(v))
@@ -107,7 +103,7 @@ case class TableAux(expr: Expr) {
       } yield v :: p
   }
 
-  def getNext(): Option[Expr] = {
+  def next(): Option[Expr] = {
     var result = Option.empty[Expr]
     var i = 0
     while (toDo.nonEmpty && result.isEmpty) {
@@ -193,16 +189,16 @@ object TableAux {
 
   def isSatisfiable(expr: Expr): Boolean = solveOne(expr).isDefined
 
-  def solveOne(expr: Expr): Option[Expr] = TableAux(expr).getNext()
+  def solveOne(expr: Expr): Option[Expr] = TableAux(expr).next()
 
   def solveAll(expr: Expr): List[Expr] = {
     val tableAux = TableAux(expr)
     var result = List.empty[Expr]
-    var elem = tableAux.getNext()
+    var elem = tableAux.next()
 
     while (elem.isDefined) {
       result = elem.get :: result
-      elem = tableAux.getNext()
+      elem = tableAux.next()
 
     }
     result

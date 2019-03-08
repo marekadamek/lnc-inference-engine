@@ -204,13 +204,13 @@ object NormalFormConverter {
 
     loop(expr)
   }
-  def convert(e: Expr): Expr = {
-    val ln = convertToLN(e)
-    LNC.simplify(ln)
-  }
+
+  def convert(e: Expr): Expr = convertToLN(e)
 
   def convertToNormalForm(e: Expr): Expr = {
-    val ln = convertToLN(e)
-    LNC.simplify(ln)
+    val a = convertToLN(e)
+    val b = moveNInside(a)
+    val c = moveNegInside(b)
+    LNC.simplify(c)
   }
 }
