@@ -10,6 +10,12 @@ class Graph[N, E] {
 
   def hasNode(n: N): Boolean = nodes.contains(n)
 
+  def findNode(predicate: N => Boolean): Option[N] = nodes.find(predicate)
+
+  def filterNodes(predicate: N => Boolean): Set[N] = nodes.filter(predicate).toSet
+
+  def existsNode(predicate: N => Boolean): Boolean = findNode(predicate).isDefined
+
   def addNode(n: N): Unit = {
     if (!nodes.contains(n)) {
       nodes += n

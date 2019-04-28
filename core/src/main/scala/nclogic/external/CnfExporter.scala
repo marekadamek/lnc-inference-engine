@@ -17,7 +17,6 @@ object CnfExporter {
     val is = new ByteArrayInputStream(formula.getBytes("UTF-8"))
     val mapFile = Files.createTempFile("cnfMap", "tmp")
 
-
     (s"$boolToCNF $mapFile" #< is #> new File(outputPath.toString)).!
 
     val mapFileSource = Source.fromFile(mapFile.toFile)

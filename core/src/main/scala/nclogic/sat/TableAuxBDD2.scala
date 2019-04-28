@@ -87,8 +87,8 @@ case class TableAuxBDD2(formula: Expr) {
               results.put(parent, solutions + terms)
 
             case Some(v) =>
-              val e1 = TableAuxBDD.setTrue(parent, v)
-              val e2 = TableAuxBDD.setTrue(parent, Not(v))
+              val e1 = TableAux.setTrue(parent, Set(v))
+              val e2 = TableAux.setTrue(parent, Set(Not(v)))
               nodes = (terms + v, e1) :: (terms + Not(v), e2) :: nodes
           }
       }
@@ -235,7 +235,18 @@ object TableAuxBDD2 {
 
   def solveOne(expr: Expr): Option[Expr] = TableAuxBDD2(expr).next()
 
-  def solveAll(expr: Expr): List[Expr] = ???
+  def solveAll(expr: Expr): Set[Expr] = {
+    val tableAux = TableAuxBDD2(expr)
+
+    def loop(acc: List[Expr]): List[Expr] = {
+      tableAux.next() match {
+        case None => acc
+        case Some(e) => loop(e :: acc)
+      }
+    }
+
+    loop(Nil).toSet
+  }
 }
 
 

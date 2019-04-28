@@ -1,6 +1,7 @@
 package nclogic.model
 
 import nclogic.model.expr._
+import nclogic.sat.TableAux
 
 import scala.collection.mutable
 
@@ -13,7 +14,7 @@ object PrefixFormulaConverter {
         case False => Some(False)
         case Var(_) => None
         case Not(Var(_)) => None
-        case Next(x, l) => Some(N(l-1, x))
+        case Next(x, l) => Some(N(l - 1, x))
         case Not(x) => loop(x).map(Not)
 
         case And(es) =>
@@ -133,9 +134,52 @@ object PrefixFormulaConverter {
     var s = ln
     for (_ <- 1 to d) {
       s = suffix(s)
+      val x = LNC.basicSimplify(s)
       bases += baseForLevel(s)
     }
 
-    LNC.simplify(Expr.and(bases.toSet))
+    LNC.basicSimplify(Expr.and(bases.toSet))
+  }
+
+  def convert3(e: Expr): Expr = {
+    val d = LNC.depth(e)
+    val ln = NormalFormConverter.convertToNormalForm(e)
+
+    var prefix = ln
+    val addons = for (i <- 0 until d) yield {
+      prefix = prefixBDD(prefix, d - i)
+      NormalFormConverter.moveNInside(N(i + 1, prefix))
+    }
+
+    LNC.basicSimplify(Expr.and(addons.toSet + ln))
+  }
+
+  def getTermAtLevel(toDo: List[Expr], d: Int): Option[Expr] = toDo match {
+    case Nil => None
+    case head :: tail => head match {
+      case Next(_, l) if l == d => Some(head)
+      case Not(Next(_, l)) if l == d => Some(head)
+      case And(es) => getTermAtLevel(es.toList ::: tail, d)
+      case Or(es) =>  getTermAtLevel(es.toList ::: tail, d)
+      case Impl(e1, e2) =>  getTermAtLevel(e1 :: e2 :: tail, d)
+      case Eq(e1, e2) =>  getTermAtLevel(e1 :: e2 :: tail, d)
+      case _ =>
+        getTermAtLevel(tail, d)
+    }
+  }
+
+  def prefixBDD(e: Expr, d: Int): Expr = {
+    getTermAtLevel(List(e), d) match {
+      case None => e
+      case Some(t) =>
+        TableAux.setTrue(e, Set(t)) match {
+          case True => True
+          case pos =>
+            TableAux.setTrue(e, Set(!t)) match {
+              case True => True
+              case neg => prefixBDD(Expr.or(pos, neg), d)
+            }
+        }
+    }
   }
 }

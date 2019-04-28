@@ -1,3 +1,5 @@
+package nclogic
+
 import java.nio.file.Paths
 
 import nclogic.external.PltlExporter
@@ -15,7 +17,7 @@ object Main extends App {
   val d = 1
 
   val formula = {
-    val base = Or((for (i<- 1 to n) yield Var(s"p$i").asInstanceOf[Expr]).toSet)
+    val base  = Or((for (i<- 1 to n) yield Var(s"p$i").asInstanceOf[Expr]).toSet)
     C(d, base)
   }
   val pf = LNC.prefixFormula(formula)

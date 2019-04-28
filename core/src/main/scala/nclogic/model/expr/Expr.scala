@@ -9,9 +9,9 @@ trait Expr {
 
   def boolString: String
 
-  def &(e: Expr): Expr = And(this, e)
+  def &(e: Expr): Expr = Expr.and(this, e)
 
-  def |(e: Expr): Expr = Or(this, e)
+  def |(e: Expr): Expr = Expr.or(this, e)
 
   def unary_! = this match {
     case Not(x) => x
@@ -25,7 +25,7 @@ trait Expr {
   def <->(e: Expr) = Eq(this, e)
 
   def isTerm: Boolean = this match {
-    case True | False | Next(True, _) | Next(False, _) | Var(_) | Not(Var(_)) | Next(Var(_), _) | Not(Next(Var(_), _)) => true
+    case Var(_) | Not(Var(_)) | Next(Var(_), _) | Not(Next(Var(_), _)) => true
     case _ => false
   }
 }
@@ -61,7 +61,14 @@ object Expr {
         case _ => false
       }
 
-      plain.exists(e => negated.contains(Not(e)))
+      plain.find(e => negated.contains(Not(e)))
+//        .map(x => {
+//          println(x)
+//          x
+//        })
+        .isDefined
+
+
     }
   }
 }

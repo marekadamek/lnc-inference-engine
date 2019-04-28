@@ -3,6 +3,7 @@ package bool
 import java.nio.file.Files
 
 import nclogic.AppConfig
+import nclogic.model.expr.Expr
 
 import scala.collection.JavaConverters._
 import scala.sys.process.{ProcessLogger, _}
@@ -37,5 +38,3 @@ trait MiniSat extends CnfSat with AppConfig {
   }
 
 }
-
-object MiniSat extends MiniSat

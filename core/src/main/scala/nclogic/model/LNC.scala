@@ -1,6 +1,7 @@
 package nclogic.model
 
 import nclogic.model.expr._
+import nclogic.model.expr.ltl.{Always, Finally, Release, Until}
 import nclogic.sat.TableAux
 
 import scala.collection.mutable
@@ -40,6 +41,18 @@ object LNC {
 
         case Or(es) =>
           elements = es.map((_, d)).toList ++ tail
+
+        case Always(x) =>
+          elements = (x, d) :: tail
+
+        case Finally(x) =>
+          elements = (x, d) :: tail
+
+        case Until(e1, e2) =>
+          elements = (e1, d) :: (e2, d) :: tail
+
+        case Release(e1, e2) =>
+          elements = (e1, d) :: (e2, d) :: tail
       }
     }
 
@@ -188,8 +201,12 @@ object LNC {
   def basicSimplify(expr: Expr): Expr = {
     val cache = mutable.HashMap.empty[Expr, Expr]
 
+    var level = 0
     def loop(e: Expr): Expr = {
-      cache.getOrElseUpdate(e, {
+      //level += 1
+     // (1 to level).foreach(_ => print("  "))
+     // println(e)
+      val x = cache.getOrElseUpdate(e, {
         e match {
           case True | False => e
           case x if x.isTerm => x
@@ -274,6 +291,11 @@ object LNC {
           case Change(_, _) => ???
         }
       })
+
+      (1 to level).foreach(_ => print("  "))
+      //println(x)
+      //level -= 1
+      x
     }
 
     loop(expr)
@@ -298,7 +320,7 @@ object LNC {
           }
 
           case And(es) =>
-            val eqs = es.filter(_.isInstanceOf[Or])
+            val eqs = es.filter(_.isInstanceOf[Eq])
 
             val x = eqs.map {
               case Eq(e1, e2) if es.contains(e1) => e2
@@ -313,13 +335,13 @@ object LNC {
             val simplified = pre.map(loop).foldLeft(Set.empty[Expr]) {
               case (set, And(e)) => set ++ e
               case (set, True) => set
-              case (set, Next(True, _)) => set
+              //case (set, Next(True, _)) => set
               case (set, e) => set + e
             }
 
             val containsFalse = simplified.exists {
               case False => true
-              case Next(False, _) => true
+              //case Next(False, _) => true
               case _ => false
             }
 
@@ -345,13 +367,13 @@ object LNC {
             val simplified = es.map(loop).foldLeft(Set.empty[Expr]) {
               case (set, Or(e)) => set ++ e
               case (set, False) => set
-              case (set, Next(False, _)) => set
+              //case (set, Next(False, _)) => set
               case (set, e) => set + e
             }
 
             val containsTrue = simplified.exists {
               case True => true
-              case Next(True, _) => true
+              //case Next(True, _) => true
               case _ => false
             }
 
@@ -379,8 +401,8 @@ object LNC {
                 }
             }
 
-          case Next(True, _) => True
-          case Next(False, _) => False
+          case Next(True, _) => e
+          case Next(False, _) => e
 
           case Next(x, l) => Next(loop(x), l)
 

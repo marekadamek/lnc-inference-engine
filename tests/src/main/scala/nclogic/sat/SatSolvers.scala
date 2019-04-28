@@ -1,26 +1,25 @@
 package nclogic.sat
 
 import bool._
+import nclogic.model.expr.Expr
 
 object SatSolvers {
 
-  val miniSat: BoolSATBasedLNCSat = new BoolSATBasedLNCSat {
-    protected val boolSat: BoolSat = new BoolSat with MiniSat {}
+  val miniSat: BoolSat = new BoolSat with MiniSat
+
+  val glucose: BoolSat = new BoolSat with GlucoseSat
+
+  val lingering: BoolSat = new BoolSat with LingeringSat
+
+  val tableAux = new BoolSat {
+    override def getSolution(e: Expr): Option[Set[Expr]] = TableAux.solveOne(e)
+
+    override def getAllSolutions(e: Expr): Set[Set[Expr]] = TableAux.solveAll(e).toSet
   }
 
-  val glucose: BoolSATBasedLNCSat = new BoolSATBasedLNCSat {
-    protected val boolSat: BoolSat = new BoolSat with GlucoseSat {}
-  }
+  val dpllLike = new BoolSat {
+    override def getSolution(e: Expr): Option[Set[Expr]] = TableAuxBDD.solveOne(e)
 
-  val lingering: BoolSATBasedLNCSat = new BoolSATBasedLNCSat {
-    protected val boolSat: BoolSat = new BoolSat with LingeringSat {}
-  }
-
-  val treengeling: BoolSATBasedLNCSat = new BoolSATBasedLNCSat {
-    protected val boolSat: BoolSat = new BoolSat with TreengelingSat {}
-  }
-
-  val plingeling: BoolSATBasedLNCSat = new BoolSATBasedLNCSat {
-    protected val boolSat: BoolSat = new BoolSat with PlingelingSat {}
+    override def getAllSolutions(e: Expr): Set[Set[Expr]] = TableAuxBDD.solveAll(e)
   }
 }

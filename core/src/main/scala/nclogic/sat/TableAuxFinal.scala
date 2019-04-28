@@ -8,9 +8,9 @@ import scala.collection.mutable
 case class TableAuxFinal(formula: Expr, commonBase: Set[Expr] = Set.empty) {
   private var toDo =
     if (commonBase.nonEmpty) {
-      commonBase.map(cb => (Set.empty[Expr], Set(formula, cb))).toList
+      commonBase.map(cb => (Set.empty[Expr], Set(formula, cb), List.empty[Expr])).toList
     } else {
-      List((Set.empty[Expr], Set(formula)))
+      List((Set.empty[Expr], Set(formula), List.empty[Expr]))
     }
 
   private val visited = mutable.Set.empty[Set[Expr]]
@@ -108,82 +108,44 @@ case class TableAuxFinal(formula: Expr, commonBase: Set[Expr] = Set.empty) {
         }
     }
 
-    loop(List(expr), false)
+    loop(List(expr), not = false)
   }
   def next(): Option[Expr] = {
     var result = Option.empty[Expr]
 
     while (toDo.nonEmpty && result.isEmpty) {
-      val (terms, expressions) = toDo.head
+      val (terms, expressions, path) = toDo.head
       toDo = toDo.tail
 
       if (!visited.contains(expressions)) {
         visited += expressions
 
         if (expressions.isEmpty || expressions == Set(True)) {
-          result = Some(if (terms.isEmpty) True else Expr.and(terms))
+          val last = if (terms.isEmpty) True else Expr.and(terms)
+          result = Some(Expr.and((last :: path).reverse.zipWithIndex.map(p => N(p._2, p._1)).toSet))
         } else if (expressions.contains(False) || Expr.isContradictory(expressions)) {
           //nothing here
         } else {
 
-          getVar(And(expressions)) match {
+          getVar(Expr.and(expressions)) match {
             case Some(v) =>
               if (!Expr.isContradictory(terms + v)) {
-                val newNode = expressions.map(e => TableAuxBDD2.setTrue(e, v))
-                toDo = (terms + v, newNode) :: toDo
+                val newNode = expressions.map(e => {
+                  TableAuxBDD2.setTrue(e, v)
+                })
+                toDo = (terms + v, newNode, path) :: toDo
               }
 
             case None =>
               val advanced = expressions.map(advance)
               val newNodes = if (commonBase.isEmpty) {
-                List((Set.empty[Expr], advanced))
+                List((Set.empty[Expr], advanced, Expr.and(terms) :: path))
               } else {
-                commonBase.map(cb => (Set.empty[Expr], advanced + cb)).toList
+                commonBase.map(cb => (Set.empty[Expr], advanced + cb, Nil)).toList
               }
               toDo = newNodes ::: toDo
 
           }
-//          val (newTerms, nonTerms) = expressions.partition(isBaseTerm)
-//
-//          //terms
-//          if (newTerms.nonEmpty) {
-//            if (!Expr.isContradictory(terms ++ newTerms)) {
-//              val newNode = nonTerms.map(e => setTrue(e, newTerms))
-//              toDo = (terms ++ newTerms, nonTerms ++ newNode) :: toDo
-//            }
-//          } else {
-//            val (alphas, nonAlphas) = expressions.partition(isAlpha)
-//
-//            if (alphas.nonEmpty) {
-//              val postAlphas = alphas.flatMap {
-//                case And(es) => es
-//                case Not(Or(es)) => es.map(!_)
-//                case Not(Eq(e1, e2)) => Set[Expr](e1 | e2, !e1 | !e2)
-//              }
-//
-//              val newNode = (terms, postAlphas ++ nonAlphas)
-//              toDo = newNode :: toDo
-//            } else {
-//              expressions.find(isBeta) match {
-//                case Some(beta) =>
-//                  val postBeta = beta match {
-//                    case Not(And(es)) => es.map(!_)
-//                    case Or(es) => es
-//                    case Eq(e1, e2) => Set(e1 & e2, !e1 & !e2)
-//                  }
-//
-//                  val newNodes = postBeta.map(pb => (terms, expressions - beta + pb))
-//                  toDo = newNodes.toList ::: toDo
-//
-//                case None =>
-//                  val advanced = expressions.map(advance)
-//                  val newNodes = commonBase.map(cb => (Set.empty[Expr], advanced + cb))
-//
-//                  toDo = newNodes.toList ::: toDo
-//              }
-//            }
-//          }
-
         }
       }
     }

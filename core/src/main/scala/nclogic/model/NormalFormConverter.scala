@@ -9,7 +9,7 @@ object NormalFormConverter {
   private val cache = mutable.Map.empty[Expr, Expr]
 
 
-  def convertToLN(e: Expr): Expr =
+  def   convertToLN(e: Expr): Expr =
     cache.getOrElseUpdate(e,
       e match {
         case True | False | Var(_) => e
@@ -68,6 +68,7 @@ object NormalFormConverter {
     def loop(e: Expr): Expr = {
       cache.getOrElseUpdate(e, {
         e match {
+          case True | False => e
           case _ if e.isTerm => e
           case And(es) => And(es.map(loop))
           case Or(es) => Or(es.map(loop))
@@ -78,10 +79,10 @@ object NormalFormConverter {
             case True | Next(True, _) => False
             case False | Next(True, _) => True
             case Not(x1) => loop(x1)
-            case And(es) => loop(Or(es.map(Not(_).asInstanceOf[Expr])))
-            case Or(es) => loop(And(es.map(Not(_).asInstanceOf[Expr])))
-            case Impl(e1, e2) => loop(And(e1, Not(e2)))
-            case Eq(e1, e2) => loop(Eq(Not(e1), e2))
+            case And(es) => loop(Or(es.map(!_)))
+            case Or(es) => loop(And(es.map(!_)))
+            case Impl(e1, e2) => loop(And(e1, !e2))
+            case Eq(e1, e2) => loop(Eq(!e1, e2))
             case Next(_, l) => e
           }
         }
@@ -211,6 +212,6 @@ object NormalFormConverter {
     val a = convertToLN(e)
     val b = moveNInside(a)
     val c = moveNegInside(b)
-    LNC.simplify(c)
+    LNC.basicSimplify(c)
   }
 }

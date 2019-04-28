@@ -1,74 +1,59 @@
 package bool
 
 import nclogic.external.BoolToCNF
-import nclogic.model.expr.{And, Expr, Not}
+import nclogic.model.expr.{Expr, Not}
 
 trait CnfSat extends BoolSat {
 
-  def solveSAT(cnf: String): Option[List[Int]]
-
-  def iterator(e: Expr): Iterator[Expr] = {
+  def getSolution(e: Expr): Option[Set[Expr]] = {
     val (cnf, vMap) = BoolToCNF.convert(e)
-
-    val it = satIterator(cnf, vMap)
-
-    new Iterator[Expr] {
-      override def hasNext: Boolean = it.hasNext
-
-      override def next(): Expr = {
-        val terms = it.next()
-          .filter(p => vMap.contains(Math.abs(p)))
-          .map { v =>
-            if (v < 0) Not(vMap(-v))
-            else vMap(v)
-          }
-        And(terms.toSet)
-      }
-    }
+    solveSAT(cnf).map(convertToExpr(_, vMap))
   }
 
-  protected def satIterator(cnf: String, vMap: Map[Int, Expr]): Iterator[List[Int]] = new Iterator[List[Int]] {
-    private val n = cnf.indexOf(System.lineSeparator())
+  private def convertToExpr(solution: List[Int], vMap: Map[Int, Expr]): Set[Expr] = {
+    val terms = solution
+      .filter(p => vMap.contains(Math.abs(p)))
+      .map { v =>
+        if (v < 0) Not(vMap(-v))
+        else vMap(v)
+      }
+    terms.toSet
+  }
 
-    private val header = cnf.take(n).split(" ")
+  def solveSAT(cnf: String): Option[List[Int]]
 
-    private var clauses = cnf.drop(n + 1)
-    private val varsCount = header(2).toInt
-    private var clausesCount = header(3).toInt
-    private var current = Option.empty[List[Int]]
 
-    private var calculated = false
+  def getAllSolutions(e: Expr): Set[Set[Expr]] = {
+    val (cnf, vMap) = BoolToCNF.convert(e)
+    val n = cnf.indexOf(System.lineSeparator())
 
-    private def solveNext(): Option[List[Int]] = this.synchronized {
-      if (calculated) {
-        current
-      } else {
-        val firstLine = s"p cnf $varsCount $clausesCount"
-        val input = firstLine + System.lineSeparator() + clauses
-        current = solveSAT(input)
+    val header = cnf.take(n).split(" ")
 
-        if (current.isDefined) {
-          val newClause = current.get
+    var clauses = cnf.drop(n + 1)
+    val varsCount = header(2).toInt
+    var clausesCount = header(3).toInt
+    var solutions = Set.empty[List[Int]]
+
+    var calculated = false
+
+    while (!calculated) {
+      val firstLine = s"p cnf $varsCount $clausesCount"
+      val input = firstLine + System.lineSeparator() + clauses
+
+      solveSAT(input) match {
+        case None => calculated = true
+        case Some(s) =>
+          solutions = solutions + s
+
+          val newClause = s
             .filter(p => vMap.contains(Math.abs(p)))
             .map(_ * -1)
             .mkString(" ") + " 0"
           clauses = newClause + System.lineSeparator() + clauses
           clausesCount += 1
-        }
-
-        calculated = true
-        current
       }
     }
 
-    override def hasNext: Boolean = this.synchronized {
-      solveNext().isDefined
-    }
-
-    override def next(): List[Int] = this.synchronized {
-      val result = solveNext()
-      calculated = false
-      result.get
-    }
+    solutions.map(convertToExpr(_, vMap))
   }
 }
