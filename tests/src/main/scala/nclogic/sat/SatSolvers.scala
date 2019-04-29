@@ -15,11 +15,23 @@ object SatSolvers {
     override def getSolution(e: Expr): Option[Set[Expr]] = TableAux.solveOne(e)
 
     override def getAllSolutions(e: Expr): Set[Set[Expr]] = TableAux.solveAll(e).toSet
+
+    override def iterator(e: Expr): BoolSatIterator = ???
   }
 
   val dpllLike = new BoolSat {
-    override def getSolution(e: Expr): Option[Set[Expr]] = TableAuxBDD.solveOne(e)
 
-    override def getAllSolutions(e: Expr): Set[Set[Expr]] = TableAuxBDD.solveAll(e)
+    override def iterator(e: Expr): BoolSatIterator = TableAuxBDD(e)
+  }
+
+  val customDPLL = new BoolSat {
+    override def getSolution(e: Expr): Option[Set[Expr]] = ???
+
+    override def getAllSolutions(e: Expr): Set[Set[Expr]] = {
+      val cnf = CNFConverter.convert(e)
+      DPLL.solve(cnf)
+    }
+
+    override def iterator(e: Expr): BoolSatIterator = ???
   }
 }

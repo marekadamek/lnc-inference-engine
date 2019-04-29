@@ -1,7 +1,9 @@
 package nclogic.sat
 
+import nclogic.model.NormalFormConverter
 import nclogic.model.expr._
-import nclogic.model.{LNC, NormalFormConverter}
+
+import scala.collection.mutable
 
 
 case class TableAux(expr: Expr) {
@@ -127,7 +129,9 @@ object TableAux {
     case head :: tail =>
       setTrue(head, terms) match {
         case False => False
-        case e => setTrueAnd(tail, terms, acc + e)
+        case e =>
+          if (acc.contains(!e)) False
+          else setTrueAnd(tail, terms, acc + e)
       }
   }
 
@@ -138,47 +142,56 @@ object TableAux {
     case head :: tail =>
       setTrue(head, terms) match {
         case True => True
-        case e => setTrueOr(tail, terms, acc + e)
+        case e =>
+          if (acc.contains(!e)) True
+          else setTrueOr(tail, terms, acc + e)
       }
   }
 
-  def setTrue(e: Expr, terms: Set[Expr]): Expr = e match {
 
-    case And(es) => setTrueAnd(es.toList, terms)
+  val cache = mutable.Map.empty[(Expr, Set[Expr]), Expr]
 
-    case Or(es) => setTrueOr(es.toList, terms)
+  def setTrue(e: Expr, terms: Set[Expr]): Expr =
+    cache.getOrElseUpdate((e, terms),
+      e match {
 
-    case Eq(e1, e2) =>
-      val x1 = setTrue(e1, terms) match {
-        case x: Not => NormalFormConverter.moveNegInside(x)
-        case x => x
-      }
+      case And(es) => setTrueAnd(es.toList, terms)
 
-      val x2 = setTrue(e2, terms) match {
-        case x: Not => NormalFormConverter.moveNegInside(x)
-        case x => x
-      }
+      case Or(es) => setTrueOr(es.toList, terms)
 
-      NormalFormConverter.moveNegInside(LNC.basicSimplify(Eq(x1, x2)))
+      case Impl(e1, e2) =>
+        setTrue(e1, terms) match {
+          case False => True
+          case True => setTrue(e2, terms)
+          case se1 => setTrue(e2, terms) match {
+            case True => True
+            case False => NormalFormConverter.moveNegInside(!se1)
+            case se2 => Impl(se1, se2)
+          }
+        }
 
-    case _ if terms.contains(e) => True
+      case Eq(e1, e2) =>
+        (setTrue(e1, terms), setTrue(e2, terms)) match {
+          case (x, y) if x == y => True
+          case (x, y) if x == !y => False
+          case (True, y) => y
+          case (False, y) => NormalFormConverter.moveNegInside(!y)
+          case (x, True) => x
+          case (x, False) => NormalFormConverter.moveNegInside(!x)
+          case (x, y) => Eq(x, y)
+        }
 
-    case Var(x) if terms.contains(Not(Var(x))) => False
+      case t if t.isTerm && terms.contains(t) => True
 
-    case Not(Var(x)) if terms.contains(Var(x)) => False
+      case t if t.isTerm && terms.contains(!t) => False
 
-    case Next(Var(x), l) if terms.contains(Not(Next(Var(x), l))) => False
+      case _ if !e.isTerm =>
+        e
 
-    case Not(Next(Var(x), l)) if terms.contains(Next(Var(x), l)) => False
+      case _ => e
+    }
+  )
 
-    case Not(e) =>
-      LNC.basicSimplify(Not(setTrue(e, terms)))
-
-    //    case Next(e, l) =>
-    //      LNC.basicSimplify(Next(setTrue(e, terms), l))
-
-    case _ => e
-  }
 
 
   def isSatisfiable(expr: Expr): Boolean = solveOne(expr).isDefined

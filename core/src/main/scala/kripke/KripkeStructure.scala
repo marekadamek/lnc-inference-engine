@@ -66,8 +66,8 @@ class KripkeStructure(val nodes: Map[Int, KripkeStructureNode] = Map.empty[Int, 
   }
 
   def findPathBFS(from: Set[Expr], to: Set[Expr]): Option[List[KripkeStructureNode]] = {
-    val startNodes = nodes.values.filter(_.terms.forall(from.contains)).map(_.id).toList
-    val goalNodes = nodes.values.filter(_.terms.forall(to.contains)).map(_.id).toSet
+    val startNodes = nodes.values.filter(n => from.forall(n.terms.contains)).map(_.id).toList
+    val goalNodes = nodes.values.filter(n => to.forall(n.terms.contains)).map(_.id).toSet
 
     bfs(startNodes.map(List(_)), Set.empty, goalNodes).map(_.map(nodes.apply))
   }

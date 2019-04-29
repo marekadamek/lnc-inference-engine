@@ -1,6 +1,6 @@
 package nclogic
 
-import nclogic.model.LNC
+import nclogic.model.{LNC, PrefixFormulaConverter}
 import nclogic.model.expr._
 import nclogic.sat.TableAuxBDD
 
@@ -51,15 +51,15 @@ object Proves extends App {
 
   val (result, tm) = time.measureTime {
     tautologies.forall(t => {
-      val pf = LNC.prefixFormula(Not(t))
-      !TableAuxBDD.isSatisfiable(pf)
+      val pf = PrefixFormulaConverter.convert3(Not(t))
+      TableAuxBDD(pf).next().isEmpty
     }) && counterTautologies.forall(ct => {
-      val pf = LNC.prefixFormula(ct)
-      !TableAuxBDD.isSatisfiable(pf)
+      val pf =PrefixFormulaConverter.convert3(ct)
+      TableAuxBDD(pf).next().isEmpty
     })
   }
 
   println("Is ok (?): " + result)
-  println("Time (ms): " + tm.millis)
+  println("Time (s): " + tm.seconds)
 }
 

@@ -113,12 +113,12 @@ object PrefixFormulaConverter {
 
   def convert2(e: Expr): Expr = {
     val d = LNC.depth(e)
-    val ln = NormalFormConverter.convertToLN(e)
+    val ln = NormalFormConverter.convertToNormalForm(e)
 
     val commonBase = getCommonBase(e)
 
     val addons = for (i <- 0 to d) yield {
-      N(i, commonBase)
+      NormalFormConverter.moveNInside(N(i, commonBase))
     }
 
     LNC.basicSimplify(Expr.and(addons.toSet + ln))
@@ -134,7 +134,6 @@ object PrefixFormulaConverter {
     var s = ln
     for (_ <- 1 to d) {
       s = suffix(s)
-      val x = LNC.basicSimplify(s)
       bases += baseForLevel(s)
     }
 
@@ -146,38 +145,59 @@ object PrefixFormulaConverter {
     val ln = NormalFormConverter.convertToNormalForm(e)
 
     var prefix = ln
+    var sufix = ln
     val addons = for (i <- 0 until d) yield {
       prefix = prefixBDD(prefix, d - i)
-      NormalFormConverter.moveNInside(N(i + 1, prefix))
+      sufix = suffix(prefixBDD(sufix, 0))
+
+      sufix & NormalFormConverter.moveNInside(N(i + 1, prefix))
     }
 
     LNC.basicSimplify(Expr.and(addons.toSet + ln))
   }
 
+  def convert4(e: Expr): Expr = {
+    val d = LNC.depth(e)
+    val ln = NormalFormConverter.convertToNormalForm(e)
+
+    val addons = for (i <- 0 until d) yield {
+      NormalFormConverter.moveNInside(N(i + 1, ln))
+    }
+
+    LNC.basicSimplify(Expr.and(addons.toSet + ln))
+  }
+
+
   def getTermAtLevel(toDo: List[Expr], d: Int): Option[Expr] = toDo match {
     case Nil => None
     case head :: tail => head match {
-      case Next(_, l) if l == d => Some(head)
-      case Not(Next(_, l)) if l == d => Some(head)
+      case _ if head.isTerm && LNC.depth(head) == d => Some(head)
       case And(es) => getTermAtLevel(es.toList ::: tail, d)
       case Or(es) =>  getTermAtLevel(es.toList ::: tail, d)
       case Impl(e1, e2) =>  getTermAtLevel(e1 :: e2 :: tail, d)
       case Eq(e1, e2) =>  getTermAtLevel(e1 :: e2 :: tail, d)
-      case _ =>
-        getTermAtLevel(tail, d)
+      case _ => getTermAtLevel(tail, d)
     }
   }
+
+
+  private def setTrue(e: Expr, t: Expr) = TableAux.setTrue(e, Set(t))
 
   def prefixBDD(e: Expr, d: Int): Expr = {
     getTermAtLevel(List(e), d) match {
       case None => e
       case Some(t) =>
-        TableAux.setTrue(e, Set(t)) match {
+        setTrue(e, t) match {
           case True => True
           case pos =>
-            TableAux.setTrue(e, Set(!t)) match {
-              case True => True
-              case neg => prefixBDD(Expr.or(pos, neg), d)
+            val neg = setTrue(e, !t)
+
+            (pos, neg) match {
+              case (_, True) => True
+              case (False, _) => neg
+              case (_, False) => pos
+              case (_, _) if pos == !neg => True
+              case _ => prefixBDD(Expr.or(pos, neg), d)
             }
         }
     }

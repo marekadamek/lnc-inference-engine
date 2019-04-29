@@ -49,13 +49,16 @@ object MissionariesAndCannibals {
 
   val problem: Expr = and(
     // always only one of mx and one of cx can be true
-    onlyOneTrue(Set(m0, m1, m2, m3)) & onlyOneTrue(Set(c0, c1, c2, c3))
+    onlyOneTrue(Set(m0, m1, m2, m3))
+    , onlyOneTrue(Set(c0, c1, c2, c3))
 
     // cannibals cannot outnumber missionaries on the right side
-    , (m1 -> !(c2 | c3)) & (m2 -> !c3)
+    , m1 -> !(c2 | c3)
+    , m2 -> !c3
 
     // cannibals cannot outnumber missionaries on the left side
-    , (m1 -> !c0) & (m2 -> !(c0 | c1))
+    , m1 -> !c0
+    ,  m2 -> !(c0 | c1)
 
     // position of the boat changes each time
     , C(b)
@@ -138,7 +141,7 @@ object MissionariesAndCannibals {
 
   def main(args: Array[String]): Unit = {
     val (kripke, graphMeasure) =   time.measureTime {
-      LNCToKripkeStructureConverter.convert(problem,  SatSolvers.miniSat)
+      LNCToKripkeStructureConverter.convert(problem,  SatSolvers.dpllLike)
     }
 
     kripke.findPathBFS(from, to)

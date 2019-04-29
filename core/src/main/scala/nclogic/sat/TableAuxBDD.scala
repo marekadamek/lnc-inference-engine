@@ -1,15 +1,21 @@
 package nclogic.sat
 
-import nclogic.model.LNC
+import bool.BoolSatIterator
 import nclogic.model.expr._
 
 
-case class TableAuxBDD(expr: Expr) {
-  private var toDo = List((Set.empty[Expr], expr))
-  private var visited = Set.empty[(Set[Expr], Expr)]
+case class TableAuxBDD(expr: Expr) extends BoolSatIterator {
+  private var toDo: List[(List[Expr], Expr)] = expr match {
+    case False => Nil
+    case True => List((Nil, True))
+    case _ =>
+      val startingTerm = getTerm(List(expr)).get
+      List((List(startingTerm), expr), (List(!startingTerm), expr))
+  }
+  private var visited = Set.empty[Set[Expr]]
 
 
-  def getTerm(toDo: List[Expr]): Option[Expr] = toDo match {
+  private def getTerm(toDo: List[Expr]): Option[Expr] = toDo match {
     case Nil => None
     case head :: tail => head match {
       case True | False => getTerm(tail)
@@ -22,7 +28,7 @@ case class TableAuxBDD(expr: Expr) {
     }
   }
 
-  private def isContradictory(es: Set[Expr]): Boolean = {
+  private def isContradictory(es: List[Expr]): Boolean = {
     var posMap = Set.empty[Expr]
     var negMap = Set.empty[Expr]
 
@@ -56,28 +62,29 @@ case class TableAuxBDD(expr: Expr) {
     false
   }
 
-  private def expand(node: (Set[Expr], Expr)): Either[List[(Set[Expr], Expr)], Set[Expr]] = {
+  private def expand(node: (List[Expr], Expr)): Either[List[(List[Expr], Expr)], Set[Expr]] = {
     val (terms, e) = node
-    if (e match {
+
+    val applied = TableAux.setTrue(e, Set(terms.head))
+    if (applied match {
       case False | Not(True) | Next(False, _) | Not(Next(True, _)) => true
       case _ => false
     }) {
       return Left(Nil)
     }
 
-    getTerm(List(e)) match {
-      case None => Right(terms)
+    getTerm(List(applied)) match {
+      case None =>
+        Right(terms.toSet)
       case Some(t) =>
-        var newNodes = List.empty[(Set[Expr], Expr)]
+        var newNodes = List.empty[(List[Expr], Expr)]
 
-        if (!isContradictory(terms + !t)) {
-          val neg = TableAux.setTrue(e, Set(!t))
-          newNodes = (terms + !t, neg) :: newNodes
+        if (!isContradictory(!t :: terms)) {
+          newNodes = (!t :: terms, applied) :: newNodes
         }
 
-        if (!isContradictory(terms + t)) {
-          val pos = TableAux.setTrue(e, Set(t))
-          newNodes = (terms + t, pos) :: newNodes
+        if (!isContradictory(t :: terms)) {
+          newNodes = (t :: terms, applied) :: newNodes
         }
 
         Left(newNodes)
@@ -91,8 +98,8 @@ case class TableAuxBDD(expr: Expr) {
     while (toDo.nonEmpty && result.isEmpty) {
       val node = toDo.head
       toDo = toDo.tail
-      if (!visited.contains(node)) {
-        visited = visited + node
+//      if (!visited.contains(node._1)) {
+//        visited = visited + node._1
 
         expand(node) match {
           case Right(solution) =>
@@ -101,29 +108,9 @@ case class TableAuxBDD(expr: Expr) {
             toDo = next ::: toDo
         }
       }
-    }
+    //}
 
     result
-  }
-}
-
-object TableAuxBDD {
-
-  def isSatisfiable(expr: Expr): Boolean = solveOne(expr).isDefined
-
-  def solveOne(expr: Expr): Option[Set[Expr]] = TableAux(expr).next()
-
-  def solveAll(expr: Expr): Set[Set[Expr]] = {
-    val tableAux = TableAuxBDD(expr)
-    var result = List.empty[Set[Expr]]
-    var elem = tableAux.next()
-
-    while (elem.isDefined) {
-      result = elem.get :: result
-      elem = tableAux.next()
-
-    }
-    result.toSet
   }
 }
 

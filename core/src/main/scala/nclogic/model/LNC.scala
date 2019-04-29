@@ -201,12 +201,8 @@ object LNC {
   def basicSimplify(expr: Expr): Expr = {
     val cache = mutable.HashMap.empty[Expr, Expr]
 
-    var level = 0
     def loop(e: Expr): Expr = {
-      //level += 1
-     // (1 to level).foreach(_ => print("  "))
-     // println(e)
-      val x = cache.getOrElseUpdate(e, {
+      cache.getOrElseUpdate(e, {
         e match {
           case True | False => e
           case x if x.isTerm => x
@@ -216,7 +212,7 @@ object LNC {
           case Not(x) => loop(x) match {
             case True => False
             case False => True
-            case x1 => Not(x1)
+            case x1 => !x1
           }
 
           case And(es) =>
@@ -267,7 +263,16 @@ object LNC {
               }
             }
 
-          case Impl(e1, e2) => loop(Or(Not(e1), e2))
+          case Impl(e1, e2) =>
+            loop(e1) match {
+              case False => True
+              case True => loop(e2)
+              case se1 => loop(e2) match {
+                case True => True
+                case False => se1
+                case se2 => Impl(se1, se2)
+              }
+            }
 
           case Eq(e1, e2) =>
             loop(e1) match {
@@ -277,7 +282,12 @@ object LNC {
                 loop(e2) match {
                   case True => s1
                   case False => loop(Not(s1))
-                  case s2 => Eq(s1, s2)
+                  case s2 => (s1, s2) match {
+                    case _ if s1 == s2 => True
+                    case _ if s1 == !s2 => False
+                    case (Not(x), Not(y)) => Eq(x, y)
+                    case _ => Eq(s1, s2)
+                  }
                 }
             }
 
@@ -291,125 +301,6 @@ object LNC {
           case Change(_, _) => ???
         }
       })
-
-      (1 to level).foreach(_ => print("  "))
-      //println(x)
-      //level -= 1
-      x
-    }
-
-    loop(expr)
-  }
-
-
-  def simplify(expr: Expr): Expr = {
-    val cache = mutable.HashMap.empty[Expr, Expr]
-
-    def loop(e: Expr): Expr = {
-      cache.getOrElseUpdate(e, {
-        e match {
-          case True | False => e
-          case x if x.isTerm => x
-          case Not(True) => False
-          case Not(False) => True
-          case Not(Not(x)) => loop(x)
-          case Not(x) => loop(x) match {
-            case True => False
-            case False => True
-            case x1 => Not(x1)
-          }
-
-          case And(es) =>
-            val eqs = es.filter(_.isInstanceOf[Eq])
-
-            val x = eqs.map {
-              case Eq(e1, e2) if es.contains(e1) => e2
-              case Eq(e1, e2) if es.contains(e2) => e1
-              case Eq(e1, e2) if es.exists(e => Expr.isContradictory(Set(e, e1))) => Not(e2)
-              case Eq(e1, e2) if es.exists(e => Expr.isContradictory(Set(e, e2))) => Not(e1)
-              case eq => eq
-            }
-
-            val pre = es -- eqs ++ x
-
-            val simplified = pre.map(loop).foldLeft(Set.empty[Expr]) {
-              case (set, And(e)) => set ++ e
-              case (set, True) => set
-              //case (set, Next(True, _)) => set
-              case (set, e) => set + e
-            }
-
-            val containsFalse = simplified.exists {
-              case False => true
-              //case Next(False, _) => true
-              case _ => false
-            }
-
-            if (containsFalse || Expr.isContradictory(simplified))
-              False
-            else {
-              simplified.size match {
-                case 0 => True
-                case 1 => simplified.head
-                case _ =>
-                  val (terms, nonTerms) = simplified.partition(_.isTerm)
-                  val termsApplied = nonTerms.map(TableAux.setTrue(_, terms))
-                  if (nonTerms == termsApplied) {
-                    And(simplified)
-                  } else {
-                    loop(And(terms ++ termsApplied))
-                  }
-              }
-            }
-
-
-          case Or(es) =>
-            val simplified = es.map(loop).foldLeft(Set.empty[Expr]) {
-              case (set, Or(e)) => set ++ e
-              case (set, False) => set
-              //case (set, Next(False, _)) => set
-              case (set, e) => set + e
-            }
-
-            val containsTrue = simplified.exists {
-              case True => true
-              //case Next(True, _) => true
-              case _ => false
-            }
-
-            if (containsTrue || Expr.isContradictory(simplified))
-              True
-            else {
-              simplified.size match {
-                case 0 => False
-                case 1 => simplified.head
-                case _ => Or(simplified)
-              }
-            }
-
-          case Impl(e1, e2) => loop(Or(Not(e1), e2))
-
-          case Eq(e1, e2) =>
-            loop(e1) match {
-              case True => loop(e2)
-              case False => loop(Not(e2))
-              case s1 =>
-                loop(e2) match {
-                  case True => s1
-                  case False => loop(Not(s1))
-                  case s2 => Eq(s1, s2)
-                }
-            }
-
-          case Next(True, _) => e
-          case Next(False, _) => e
-
-          case Next(x, l) => Next(loop(x), l)
-
-          case Change(_, _) => ???
-        }
-      }
-      )
     }
 
     loop(expr)

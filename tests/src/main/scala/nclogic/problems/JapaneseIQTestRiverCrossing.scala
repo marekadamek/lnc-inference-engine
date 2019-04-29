@@ -1,7 +1,6 @@
 package nclogic.problems
 
 import kripke.LNCToKripkeStructureConverter
-import nclogic.model.PrefixFormulaConverter
 import nclogic.model.expr.Expr._
 import nclogic.model.expr.{C, _}
 import nclogic.sat.SatSolvers
@@ -121,7 +120,7 @@ object JapaneseIQTestRiverCrossing {
   def main(args: Array[String]): Unit = {
 
     val (kripke, graphMeasure) = time.measureTime {
-      LNCToKripkeStructureConverter.convert(problem, SatSolvers.miniSat)
+      LNCToKripkeStructureConverter.convert(problem, SatSolvers.dpllLike)
     }
 
     val (path, pathMeasure) = time.measureTime {

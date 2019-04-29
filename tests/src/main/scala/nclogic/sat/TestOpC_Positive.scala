@@ -12,7 +12,7 @@ import time._
 
 object TestOpC_Positive extends App with AppConfig {
 
-  val n = 50
+  val n = 10
 
   val formatter = new SimpleDateFormat("hh:mm")
 
@@ -23,10 +23,10 @@ object TestOpC_Positive extends App with AppConfig {
     //println()
 
     // begin table
-    val (formula, fileName) = TestFormulas.negativeC(n, d)
+    val (formula, fileName) = TestFormulas.positiveC(n, d)
 
 //    val (prefixFormula2, prefixTime2) = measureTime {
-//      PrefixFormulaConverter.convert2(formula)
+//      PrefixFormulaConverter.convert3(formula)
 //    }
 
     // begin table
@@ -35,12 +35,17 @@ object TestOpC_Positive extends App with AppConfig {
 //        case False => None
 //        case True => Some(True)
 //        case base =>
-//          TableAuxFinal(base).next()
+//          TableAuxBDD(base).next()
 //      }
 //    }
-//
-   // println(s"${prefixTime2.seconds}, ${prefixFormula2}")
-//    println(s"${prefixTime2.seconds}, ${tableTime.seconds}")
+
+    val normalForm = NormalFormConverter.convertToNormalForm(formula)
+    val (solution, tableTime) = measureTime {
+      TableAuxBDDLNC(normalForm).next()
+    }
+   // println(s"$d ${prefixTime2.seconds}, ${tableTime.seconds}")
+    println(s"${tableTime.seconds}")
+    println(s"${solution}")
     // end table
 
 
@@ -71,11 +76,11 @@ object TestOpC_Positive extends App with AppConfig {
 //        println(s"TRP++ export time (ms): ${trpTime.seconds}")
 
     ////    //aalta
-        val aaltaDir = config.getString("aaltaFilesDir")
-        val (_, aaltaTime) = measureTime {
-          AaltaExporter.convert(formula, Paths.get(aaltaDir, s"$fileName.aalta"))
-        }
-    //
+//        val aaltaDir = config.getString("aaltaFilesDir")
+//        val (_, aaltaTime) = measureTime {
+//          AaltaExporter.convert(formula, Paths.get(aaltaDir, s"$fileName.aalta"))
+//        }
+//    //
         //NuSMV
 //        val nuSmvDir = config.getString("nusmvFilesDir")
 //        val (_, smvTime) = measureTime {

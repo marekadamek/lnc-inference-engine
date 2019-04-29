@@ -72,7 +72,7 @@ object NormalFormConverter {
           case _ if e.isTerm => e
           case And(es) => And(es.map(loop))
           case Or(es) => Or(es.map(loop))
-          case Impl(e1, e2) => Impl(loop(e1), loop(e2))
+          case Impl(e1, e2) => loop(Or(!e1, e2))
           case Eq(e1, e2) => Eq(loop(e1), loop(e2))
 
           case Not(x) => x match {

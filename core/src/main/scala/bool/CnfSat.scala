@@ -5,11 +5,6 @@ import nclogic.model.expr.{Expr, Not}
 
 trait CnfSat extends BoolSat {
 
-  def getSolution(e: Expr): Option[Set[Expr]] = {
-    val (cnf, vMap) = BoolToCNF.convert(e)
-    solveSAT(cnf).map(convertToExpr(_, vMap))
-  }
-
   private def convertToExpr(solution: List[Int], vMap: Map[Int, Expr]): Set[Expr] = {
     val terms = solution
       .filter(p => vMap.contains(Math.abs(p)))
@@ -23,37 +18,33 @@ trait CnfSat extends BoolSat {
   def solveSAT(cnf: String): Option[List[Int]]
 
 
-  def getAllSolutions(e: Expr): Set[Set[Expr]] = {
-    val (cnf, vMap) = BoolToCNF.convert(e)
-    val n = cnf.indexOf(System.lineSeparator())
+  def iterator(e: Expr): BoolSatIterator = new BoolSatIterator {
+    private val (cnf, vMap) = BoolToCNF.convert(e)
+    private val n = cnf.indexOf(System.lineSeparator())
 
-    val header = cnf.take(n).split(" ")
+    private val header = cnf.take(n).split(" ")
 
-    var clauses = cnf.drop(n + 1)
-    val varsCount = header(2).toInt
-    var clausesCount = header(3).toInt
-    var solutions = Set.empty[List[Int]]
+    private var clauses = cnf.drop(n + 1)
+    private val varsCount = header(2).toInt
+    private var clausesCount = header(3).toInt
 
-    var calculated = false
 
-    while (!calculated) {
+    def next(): Option[Set[Expr]] = {
       val firstLine = s"p cnf $varsCount $clausesCount"
       val input = firstLine + System.lineSeparator() + clauses
 
-      solveSAT(input) match {
-        case None => calculated = true
-        case Some(s) =>
-          solutions = solutions + s
+      solveSAT(input).map(s => {
+        val newClause = s
+          .filter(p => vMap.contains(Math.abs(p)))
+          .map(_ * -1)
+          .mkString(" ") + " 0"
+        clauses = newClause + System.lineSeparator() + clauses
+        clausesCount += 1
 
-          val newClause = s
-            .filter(p => vMap.contains(Math.abs(p)))
-            .map(_ * -1)
-            .mkString(" ") + " 0"
-          clauses = newClause + System.lineSeparator() + clauses
-          clausesCount += 1
-      }
+        convertToExpr(s, vMap)
+      })
+
     }
 
-    solutions.map(convertToExpr(_, vMap))
   }
 }

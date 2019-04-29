@@ -1,9 +1,9 @@
 package kripke
 
-import bool.BoolSat
+import bool.{BoolSat, BoolSatIterator}
 import nclogic.mc.LNCMC
 import nclogic.model.expr.{Expr, _}
-import nclogic.model.{LNC, PrefixFormulaConverter}
+import nclogic.model.{LNC, NormalFormConverter, PrefixFormulaConverter}
 import nclogic.sat.TableAux
 
 import scala.collection.mutable
@@ -25,7 +25,7 @@ object LNCToKripkeStructureConverter {
       case Not(v) => v
     }
 
-    val used = terms.map(getTerm)
+    val used = (terms - True).map(getTerm)
     val missing = allTerms -- used
     perms(missing.toList) match {
       case Nil => Set(terms)
@@ -44,10 +44,15 @@ object LNCToKripkeStructureConverter {
         N(i, v)
       }).toSet
 
-    val normal = PrefixFormulaConverter.convert3(formula)
+    val (normal, prefitTime) = time.measureTime {
+      PrefixFormulaConverter.convert3(formula)
+    }
 
-    val all = satSolver.getAllSolutions(normal)
+    println(prefitTime.seconds)
 
+//    val all = satSolver.getAllSolutions(normal)
+
+    val all = satSolver.getAllSolutions(NormalFormConverter.convertToNormalForm(formula))
     val valuations = all.flatMap(addMissingTerms(_, allVars))
 
     var lastId = 1
@@ -115,7 +120,62 @@ object LNCToKripkeStructureConverter {
     }
 
 
-    val init = addMissingTerms(from, Set.empty).map(List(_)).toList
+    val init = addMissingTerms(from, baseVars).map(List(_)).toList
     bfs(init)
+  }
+
+  def findPathDFS(formula: Expr, from: Set[Expr], to: Set[Expr], satSolver: BoolSat): Option[List[Set[Expr]]] = {
+    val prefix = PrefixFormulaConverter.convert3(formula)
+    val baseVars = LNCMC.getVars(formula)
+
+    def getIterator(node: Set[Expr]): BoolSatIterator = {
+      val simplified = TableAux.setTrue(prefix, node)
+      satSolver.iterator(simplified)
+    }
+
+    val itMap = mutable.Map.empty[Set[Expr], (Boolean, BoolSatIterator)]
+
+    def getNext(it: BoolSatIterator): Option[Set[Expr]] = {
+     it.next().map(_.filter(LNC.depth(_) > 0) map {
+        case Next(e, l) => N(l - 1, e)
+        case Not(Next(e, l)) => Not(N(l - 1, e))
+      })
+    }
+
+    def dfs(nodes: List[List[Set[Expr]]], visited: Set[Set[Expr]] = Set.empty): Option[List[Set[Expr]]] = nodes match {
+      case Nil => None
+      case path :: tail =>
+        val found = to.forall(path.head.contains)
+        if (found) Some(path.reverse)
+        else {
+          val (processed, it) = itMap(path.head)
+          if (processed) {
+            dfs(tail)
+          } else {
+            getNext(it) match {
+              case None =>
+                itMap.update(path.head, (true, it))
+                dfs(tail)
+
+              case Some(next) if path.contains(next) =>
+                dfs(nodes)
+
+              case Some(next) =>
+                if (!itMap.contains(next)) {
+                  itMap.put(next, (false, getIterator(next)))
+                }
+                dfs((next :: path) :: nodes)
+            }
+          }
+        }
+    }
+
+
+    val init = addMissingTerms(from, baseVars)
+    init.foreach(n => {
+      itMap.put(n, (false, getIterator(n)))
+    })
+
+    dfs(init.map(List(_)).toList)
   }
 }
