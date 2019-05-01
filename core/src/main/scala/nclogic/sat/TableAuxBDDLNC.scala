@@ -35,6 +35,7 @@ case class TableAuxBDDLNC(expr: Expr) extends BoolSatIterator {
   val allTerms = getAllTerms(List(expr))
   val allAt = allTerms.filterNot(_.isInstanceOf[Not]).toArray.sortBy(t => (LNC.depth(t), getAT(t)))
 
+
   private val root = new BDDTree(expr)
   private var toDo = List((root, 0, true, List.empty[Expr]), (root, 0, false, List.empty[Expr]))
 

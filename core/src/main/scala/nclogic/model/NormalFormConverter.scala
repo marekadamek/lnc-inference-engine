@@ -8,8 +8,68 @@ object NormalFormConverter {
 
   private val cache = mutable.Map.empty[Expr, Expr]
 
+  private def moveNOutside(expr: Expr, d: Int): Expr = expr match {
+    case True | False | Var(_) => expr
 
-  def   convertToLN(e: Expr): Expr =
+    case Not(x) => moveNOutside(x, d) match {
+      case Next(x1, l) => Next(Not(x1), l)
+      case x1 => Not(x1)
+    }
+
+    case Next(x, l) => moveNOutside(x, d) match {
+      case Next(x1, l1) => Next(x1, l + l1)
+      case x1 => Next(x1, l)
+    }
+
+    case And(es) =>
+      val nOut = es.map(moveNOutside(_, d))
+      val minN = nOut.foldLeft(d) {
+        case (min, Next(_, l)) if l < min => l
+        case (min, Next(_, _)) => min
+        case _ => 0
+      }
+
+      if (minN > 0) N(minN, And(nOut.map(_.asInstanceOf[Next]).map(n => N(n.level - minN, n.e))))
+      else And(nOut)
+
+    case Or(es) =>
+      val nOut = es.map(moveNOutside(_, d))
+      val minN = nOut.foldLeft(d) {
+        case (min, Next(_, l)) if l < min => l
+        case (min, Next(_, l)) => min
+        case _ => 0
+      }
+
+      if (minN > 0) N(minN, Or(nOut.map(_.asInstanceOf[Next]).map(n => N(n.level - minN, n.e))))
+      else Or(nOut)
+
+    case Impl(e1, e2) =>
+      (moveNOutside(e1, d), moveNOutside(e2, d)) match {
+        case (Next(x1, l1), Next(x2, l2)) =>
+          val minN = Math.min(l1, l2)
+          N(minN, Impl(x1, x2))
+        case (x1, x2) =>
+          Impl(x1, x2)
+      }
+
+    case Eq(e1, e2) =>
+      (moveNOutside(e1, d), moveNOutside(e2, d)) match {
+        case (Next(x1, l1), Next(x2, l2)) =>
+          val minN = Math.min(l1, l2)
+          N(minN, Eq(x1, x2))
+        case (x1, x2) =>
+          Eq(x1, x2)
+      }
+
+
+    case Change(x, l) => moveNOutside(x, d) match {
+      case Next(x1, l1) => Next(Change(x1, l), l1)
+      case x1 => Change(x1, l)
+    }
+
+  }
+
+  def convertToLN(e: Expr): Expr = {
     cache.getOrElseUpdate(e,
       e match {
         case True | False | Var(_) => e
@@ -31,6 +91,8 @@ object NormalFormConverter {
           convertToLN(s <-> !N(s))
       }
     )
+  }
+
 
   def moveNInside(expr: Expr): Expr = {
     val cache = mutable.HashMap.empty[Expr, Expr]
@@ -74,7 +136,7 @@ object NormalFormConverter {
           case Or(es) => Or(es.map(loop))
           case Impl(e1, e2) => loop(Or(!e1, e2))
           case Eq(e1, e2) => Eq(loop(e1), loop(e2))
-
+          case Next(x, l) => Next(loop(x), l)
           case Not(x) => x match {
             case True | Next(True, _) => False
             case False | Next(True, _) => True
@@ -206,7 +268,22 @@ object NormalFormConverter {
     loop(expr)
   }
 
-  def convert(e: Expr): Expr = convertToLN(e)
+  def convert(e: Expr): Expr = {
+    val ln = convertToLN(e)
+
+    val flat = moveNOutside(LNC.basicSimplify(ln), LNC.depth(e))
+
+    def dropN(expr: Expr) = expr match {
+      case Next(x, _) => x
+      case And(es) => And(es.map {
+        case Next(x, _) => x
+        case x => x
+      })
+      case _ => expr
+    }
+
+    dropN(flat)
+  }
 
   def convertToNormalForm(e: Expr): Expr = {
     val a = convertToLN(e)

@@ -48,11 +48,9 @@ object LNCToKripkeStructureConverter {
       PrefixFormulaConverter.convert3(formula)
     }
 
-    println(prefitTime.seconds)
 
-//    val all = satSolver.getAllSolutions(normal)
+    val all = satSolver.getAllSolutions(normal)
 
-    val all = satSolver.getAllSolutions(NormalFormConverter.convertToNormalForm(formula))
     val valuations = all.flatMap(addMissingTerms(_, allVars))
 
     var lastId = 1

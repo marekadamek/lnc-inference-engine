@@ -12,7 +12,7 @@ object JapaneseIQTestRiverCrossingSymbolic {
 
   def main(args: Array[String]): Unit = {
     val (path1, time2) = time.measureTime {
-      LNCToKripkeStructureConverter.findPathDFS(problem, from, to,  SatSolvers.dpllLike)
+      LNCToKripkeStructureConverter.findPathBFS(problem, from, to,  SatSolvers.dpllLike)
     }
 
     path1.get.foreach(x => {

@@ -58,7 +58,7 @@ object MissionariesAndCannibals {
 
     // cannibals cannot outnumber missionaries on the left side
     , m1 -> !c0
-    ,  m2 -> !(c0 | c1)
+    , m2 -> !(c0 | c1)
 
     // position of the boat changes each time
     , C(b)
@@ -137,7 +137,7 @@ object MissionariesAndCannibals {
   // all people are on the left side
   val from = Set[Expr](m0, c0, !m1, !m2, !m3, !c1, !c2, !c3, !b)
   // all people are on the right side
-  val to =  Set[Expr](m3, c3)
+  val to =  Set[Expr](!m0, !c0, !m1, !m2, m3, !c1, !c2, c3, b)
 
   def main(args: Array[String]): Unit = {
     val (kripke, graphMeasure) =   time.measureTime {
@@ -145,6 +145,7 @@ object MissionariesAndCannibals {
     }
 
     kripke.findPathBFS(from, to)
+
     val (path, pathMeasure) = time.measureTime {
       kripke.findPathBFS(from, to)
     }
@@ -152,14 +153,14 @@ object MissionariesAndCannibals {
     path.get.map(_.terms).foreach(x => {
       val es = x - b
       val vars = es.filterNot(_.isInstanceOf[Not]).map(_.asInstanceOf[Var])
-      val m = vars.find(_.name.startsWith("m")).get
-      val c = vars.find(_.name.startsWith("c")).get
+      val m = vars.find(_.name.startsWith("m")).getOrElse(vars.head)
+      val c = vars.find(_.name.startsWith("c")).getOrElse(vars.head)
 
       val mc = (m, c) match {
         case (_, _) if (m, c) == (m0, c0) => ("M M M C C C", "")
         case (_, _) if (m, c) == (m0, c1) => ("M M M C C ", "C ")
         case (_, _) if (m, c) == (m0, c2) => ("M M M C", "C C ")
-        case (_, _) if (m, c) == (m0, c3) => ("M M M C", "C C C")
+        case (_, _) if (m, c) == (m0, c3) => ("M M M", "C C C")
 
         case (_, _) if (m, c) == (m1, c0) => ("M M C C C", "M")
         case (_, _) if (m, c) == (m1, c1) => ("M M C C", "M C")
@@ -175,6 +176,7 @@ object MissionariesAndCannibals {
         case (_, _) if (m, c) == (m3, c1) => ("C C ", "M M M C")
         case (_, _) if (m, c) == (m3, c2) => ("C", "M M M C C ")
         case (_, _) if (m, c) == (m3, c3) => ("", "M M M C C C")
+        case (_, _) => ("UNKNOWN", vars.mkString(" "))
 
       }
 

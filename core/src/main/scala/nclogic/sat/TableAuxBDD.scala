@@ -12,7 +12,6 @@ case class TableAuxBDD(expr: Expr) extends BoolSatIterator {
       val startingTerm = getTerm(List(expr)).get
       List((List(startingTerm), expr), (List(!startingTerm), expr))
   }
-  private var visited = Set.empty[Set[Expr]]
 
 
   private def getTerm(toDo: List[Expr]): Option[Expr] = toDo match {
@@ -77,6 +76,7 @@ case class TableAuxBDD(expr: Expr) extends BoolSatIterator {
       case None =>
         Right(terms.toSet)
       case Some(t) =>
+
         var newNodes = List.empty[(List[Expr], Expr)]
 
         if (!isContradictory(!t :: terms)) {

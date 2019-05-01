@@ -1,6 +1,6 @@
 package kripke
 
-import nclogic.model.expr.Expr
+import nclogic.model.expr.{Expr, Var}
 
 class KripkeStructure(val nodes: Map[Int, KripkeStructureNode] = Map.empty[Int, KripkeStructureNode],
                       val edges: Map[Int, Set[Int]] = Map.empty[Int, Set[Int]]) {
@@ -70,5 +70,23 @@ class KripkeStructure(val nodes: Map[Int, KripkeStructureNode] = Map.empty[Int, 
     val goalNodes = nodes.values.filter(n => to.forall(n.terms.contains)).map(_.id).toSet
 
     bfs(startNodes.map(List(_)), Set.empty, goalNodes).map(_.map(nodes.apply))
+  }
+
+  def prettyPrint(): Unit = {
+    def nodesStr(ts: KripkeStructureNode): String = {
+      ts.terms
+        .filter {
+          case Var(_) => true
+          case _ => false
+        }
+        .toList.sortBy(_.toString).mkString(" ")
+    }
+
+    for {
+      i <- nodes.keys.toList.sorted
+      j <- edges(i).toList.sorted
+    } {
+      println(nodesStr(nodes(i)) + "  -->  " + nodesStr(nodes(j)))
+    }
   }
 }

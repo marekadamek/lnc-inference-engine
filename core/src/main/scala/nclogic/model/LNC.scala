@@ -60,112 +60,6 @@ object LNC {
   }
 
 
-  private def prefix(expr: Expr, depth: Int, cache: mutable.Map[Expr, Option[Expr]]): Expr = {
-    if (depth == 0) True
-    else {
-
-      def loop(e: Expr): Option[Expr] = {
-        cache.getOrElseUpdate(e, {
-          e match {
-            case True => Some(True)
-            case False => Some(False)
-            case Next(Var(x), l) => Some(Next(Var(x), l + 1))
-            case Not(Next(Var(x), l)) => Some(Not(Next(Var(x), l + 1)))
-            case Next(Not(x), l) => loop(Not(Next(x, l)))
-            case Var(x) => Some(Next(Var(x), 1))
-            case Not(Var(x)) => Some(Not(Next(Var(x), 1)))
-            case Not(x) => loop(x).map(Not)
-
-            case And(es) =>
-              val converted = es.map(loop).filter(_.isDefined).map(_.get)
-              converted.size match {
-                case 0 => None
-                case 1 => Some(converted.head)
-                case _ => Some(And(converted))
-              }
-
-            case Or(es) =>
-              val converted = es.map(loop).filter(_.isDefined).map(_.get)
-
-              converted.size match {
-                case 0 => None
-                case 1 => Some(converted.head)
-                case _ => Some(Or(converted))
-              }
-
-            case Eq(e1, e2) =>
-              val ce1 = loop(e1)
-              val ce2 = loop(e2)
-              if (ce1.isEmpty || ce2.isEmpty) {
-                None
-              } else {
-                Some(Eq(ce1.get, ce2.get))
-              }
-
-            case Impl(e1, e2) => loop(Or(NormalFormConverter.moveNegInside(Not(e1)), e2))
-
-          }
-        })
-      }
-
-      loop(expr).getOrElse(True)
-    }
-  }
-
-  private def cutToDepth(expr: Expr, depth: Int): Expr = {
-    val cache = mutable.HashMap.empty[Expr, Option[Expr]]
-
-    def isOut(e: Expr): Boolean = e match {
-      case Next(_, l) => l > depth
-      case Not(Next(_, l)) => l > depth
-      case _ => false
-    }
-
-    def loop(e: Expr): Option[Expr] = {
-      cache.getOrElseUpdate(e, {
-        e match {
-          case True => Some(True)
-          case False => Some(False)
-          case Next(Var(x), l) => if (l <= depth) Some(e) else None
-          case Not(Next(Var(x), l)) => if (l <= depth) Some(e) else None
-          case Var(_) | Not(Var(_)) => Some(e)
-
-          case And(es) =>
-            val (outs, rest) = es.partition(isOut)
-            val converted = rest.map(TableAux.setTrue(_, outs)).map(loop).filter(_.isDefined).map(_.get)
-            converted.size match {
-              case 0 => None
-              case 1 => Some(converted.head)
-              case _ => Some(And(converted))
-            }
-
-          case Or(es) =>
-            val (outs, rest) = es.partition(isOut)
-            val converted = rest.diff(outs).map(loop).filter(_.isDefined).map(_.get)
-            converted.size match {
-              case 0 => None
-              case 1 => Some(converted.head)
-              case _ => Some(Or(converted))
-            }
-
-          case Eq(e1, e2) =>
-            val se1 = loop(e1)
-            val se2 = loop(e2)
-            if (se1.isEmpty || se2.isEmpty)
-              None
-            else {
-              Some(Eq(loop(e1).get, loop(e2).get))
-            }
-          //
-          //          case Impl(e1, e2) => Some(loop(Or(NormalFormConverter.moveNegInside(Not(e1)), e2)))
-          //
-        }
-      })
-    }
-
-    loop(expr).getOrElse(True)
-  }
-
   def suffix(e: Expr): Expr = {
     val result = e match {
       case Var(_) | Not(Var(_)) | True | False => True
@@ -212,7 +106,7 @@ object LNC {
           case Not(x) => loop(x) match {
             case True => False
             case False => True
-            case x1 => !x1
+            case x1 => NormalFormConverter.moveNegInside(!x1)
           }
 
           case And(es) =>
@@ -269,7 +163,7 @@ object LNC {
               case True => loop(e2)
               case se1 => loop(e2) match {
                 case True => True
-                case False => se1
+                case False => NormalFormConverter.moveNegInside(!se1)
                 case se2 => Impl(se1, se2)
               }
             }
@@ -298,7 +192,9 @@ object LNC {
 
           case Next(x, l) => Next(loop(x), l)
 
-          case Change(_, _) => ???
+          case Change(Next(x, l1), l) => loop(Next(Change(x, l), l1))
+
+          case Change(x, l) => Change(loop(x), l)
         }
       })
     }

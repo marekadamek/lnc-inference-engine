@@ -149,10 +149,10 @@ object TableAux {
   }
 
 
-  val cache = mutable.Map.empty[(Expr, Set[Expr]), Expr]
+  //val cache = mutable.Map.empty[(Expr, Set[Expr]), Expr]
 
   def setTrue(e: Expr, terms: Set[Expr]): Expr =
-    cache.getOrElseUpdate((e, terms),
+   // cache.getOrElseUpdate((e, terms),
       e match {
 
       case And(es) => setTrueAnd(es.toList, terms)
@@ -165,7 +165,8 @@ object TableAux {
           case True => setTrue(e2, terms)
           case se1 => setTrue(e2, terms) match {
             case True => True
-            case False => NormalFormConverter.moveNegInside(!se1)
+            case False =>
+              NormalFormConverter.moveNegInside(!se1)
             case se2 => Impl(se1, se2)
           }
         }
@@ -190,7 +191,7 @@ object TableAux {
 
       case _ => e
     }
-  )
+ // )
 
 
 
