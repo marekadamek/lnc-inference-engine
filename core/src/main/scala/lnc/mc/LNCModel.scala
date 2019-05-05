@@ -102,7 +102,7 @@ case class LNCModel(formula: Expr, satSolver: BoolSat) {
 
 
   def findCycle(): Option[Set[Expr]] = {
-    val (prefix, solutions) = PrefixFormulaConverter.calculatePrefix(NormalFormConverter.convertToNormalForm(formula))
+    val (prefix, _) = PrefixFormulaConverter.calculatePrefix(NormalFormConverter.convertToNormalForm(formula))
 
     val visited = mutable.Set.empty[Set[Expr]]
     val mainIt = satSolver.iterator(prefix)
@@ -130,11 +130,11 @@ case class LNCModel(formula: Expr, satSolver: BoolSat) {
     while (start.nonEmpty && result.isEmpty) {
 
       var toDo = start
-        .map(s => List(List(s)))
+        .map(s => List((List(s), getIterator(s))))
         .getOrElse(Nil)
 
       while (toDo.nonEmpty && result.isEmpty) {
-        val path = toDo.head
+        val (path, it) = toDo.head
 
         if (path.tail.exists(s => matches(s, path.head))) {
           result = Some(path.head)

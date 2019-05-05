@@ -4,7 +4,7 @@ import java.nio.file.Paths
 import java.text.SimpleDateFormat
 
 import lnc.kripke.LNCToKripkeStructureConverter
-import lnc.AppConfig
+import lnc.{AppConfig, LNC}
 import lnc.external.PltlExporter
 import lnc.mc.LNCModel
 import lnc.expr._
@@ -31,33 +31,28 @@ object TestOpC_Positive extends App with AppConfig {
       (optimized, file)
     }
 
-    val (prefixFormula, prefixTime) = measureTime {
-
-    }
-
-
     val (cycle, cycleTIme) = measureTime {
       LNCModel(formula, SatSolvers.dpllLike).findCycle()
     }
-    println(d, prefixTime.seconds, cycleTIme.seconds, cycle.isDefined)
+    println(d, cycleTIme.seconds, cycle.isDefined)
 
 
-    //    val (prefixFormula, prefixTime) = measureTime {
-    //      LNC.calculatePrefixFormula(formula)
-    //    }
-    //
-    //
-    //    val (solution, tableTime) = measureTime {
-    //      prefixFormula match {
-    //        case False => None
-    //        case True => Some(True)
-    //        case _ =>
-    //          val normal = NormalFormConverter.convertToNormalForm(prefixFormula)
-    //          TableAuxBDD(normal).next()
-    //      }
-    //    }
-    //
-    //    println(d, prefixTime.seconds, tableTime.seconds, solution.isDefined)
+//        val (prefixFormula, prefixTime) = measureTime {
+//          LNC.calculatePrefixFormula(formula)
+//        }
+//
+//
+//        val (solution, tableTime) = measureTime {
+//          prefixFormula match {
+//            case False => None
+//            case True => Some(True)
+//            case _ =>
+//              val normal = NormalFormConverter.convertToNormalForm(prefixFormula)
+//              SatSolvers.dpllLike.iterator(normal).next()
+//          }
+//        }
+//
+//        println(d, prefixTime.seconds, tableTime.seconds, solution.isDefined)
 
 
     //    println(s"$d ${prefixTime.seconds}, ${tableTime.seconds}")

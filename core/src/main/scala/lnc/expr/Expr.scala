@@ -12,6 +12,8 @@ trait Expr {
   def |(e: Expr): Expr = Expr.or(this, e)
 
   def unary_! : Expr = this match {
+    case True => False
+    case False => True
     case Not(x) => x
     case _ => Not(this)
   }

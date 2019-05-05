@@ -24,10 +24,10 @@ object PrefixFormulaConverter {
 
     var p = ln
     val prefixes = for (i <- 1 to d) yield {
-      val (pp, solutions) = calculatePrefix(p)
+      val (pp, _) = calculatePrefix(p)
       p = pp
 
-      N(i, p) & N(d - (i - i), solutionsToExpr(solutions))
+      N(i, p)
     }
 
     Expr.and(Set(ln) ++ prefixes.toSet)
