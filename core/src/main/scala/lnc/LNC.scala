@@ -6,6 +6,14 @@ import lnc.expr.ltl.{Always, Finally, Release, Until}
 
 object LNC {
 
+  import NormalFormConverter._
+  import PrefixFormulaConverter._
+
+  /**
+    * Calculates depth of the given LNC formula
+    * @param formula LNC formula
+    * @return depth of LNC formula
+    */
   def depth(formula: Expr): Int = {
 
     def loop(elems: List[(Expr, Int)], max: Int): Int = elems match {
@@ -24,13 +32,18 @@ object LNC {
         case Finally(x) => loop((x, d) :: es, max)
         case Until(e1, e2) => loop((e1, d) :: (e2, d) :: es, max)
         case Release(e1, e2) => loop((e1, d) :: (e2, d) :: es, max)
-
       }
     }
 
     loop(List((formula, 0)), 0)
   }
 
+  /**
+    * Reverse temporal direction of input formula by symmetrical replacement of N operator nesting
+    * @param e LNC formula
+    * @param d depth of input formula
+    * @return LNC formula being reversed version of input formula
+    */
   def reverse(e: Expr, d: Int): Expr = e match {
     case True | False => e
     case Var(v) => N(d, Var(v))
@@ -42,12 +55,17 @@ object LNC {
     case Eq(e1, e2) => Eq(reverse(e1, d), reverse(e2, d))
   }
 
+  /**
+    * Reverse temporal direction of input formula by symmetrical replacement of N operator nesting
+    * @param e LNC formula
+    * @return LNC formula being reversed version of input formula
+    */
   def reverse(e: Expr): Expr = reverse(e, depth(e))
 
   def calculatePrefixFormula(formula: Expr): Expr = {
-    val d = LNC.depth(formula)
-    val ln = NormalFormConverter.convertToLN(formula)
-    val optimized = NormalFormConverter.optimize(ln, d)
-    PrefixFormulaConverter.prefixFormula(optimized)
+    val d = depth(formula)
+    val ln = convertToLN(formula)
+    val optimized = preprocess(ln, d)
+    prefixFormula(optimized)
   }
 }

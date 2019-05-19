@@ -1,6 +1,6 @@
 package lnc.problems
 
-import lnc.kripke.LNCToKripkeStructureConverter
+import lnc.kripke.{KripkeStructureBFS, LNCToKripkeStructureConverter}
 import lnc.mc.LNCModel
 import lnc.expr.Expr._
 import lnc.expr.{C, _}
@@ -177,17 +177,14 @@ object MissionariesAndCannibalsProblem {
 }
 
 object MissionariesAndCannibals extends App {
-
   import MissionariesAndCannibalsProblem._
 
   val (kripke, graphMeasure) = time.measureTime {
     LNCToKripkeStructureConverter.convert(problem, SatSolvers.dpllLike)
   }
 
-  kripke.findPathBFS(from, to)
-
   val (path, pathMeasure) = time.measureTime {
-    kripke.findPathBFS(from, to)
+    KripkeStructureBFS.findPath(kripke, from, to)
   }
 
   printSolution(path.get.map(_.terms))
@@ -200,7 +197,6 @@ object MissionariesAndCannibals extends App {
 }
 
 object MissionariesAndCannibalsSymbolicBFS extends App {
-
   import MissionariesAndCannibalsProblem._
 
   val (path, solvingTime) = time.measureTime {
@@ -208,21 +204,18 @@ object MissionariesAndCannibalsSymbolicBFS extends App {
   }
 
   printSolution(path.get)
-
   println()
   println("Execution time (s): " + solvingTime.seconds)
 }
 
 object MissionariesAndCannibalsSymbolicDFS extends App {
-
   import MissionariesAndCannibalsProblem._
 
   val (path, solvingTime) = time.measureTime {
-    LNCModel(problem, SatSolvers.dpllLike).findPathBFS(from, to)
+    LNCModel(problem, SatSolvers.dpllLike).findPathDFS(from, to)
   }
 
   printSolution(path.get)
-
   println()
   println("Execution time (s): " + solvingTime.seconds)
 }

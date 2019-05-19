@@ -2,10 +2,16 @@ package lnc.bool
 
 import lnc.expr.Expr
 
+/**
+  * Base trait for boolean formula solutions iterator
+  */
 trait BoolSatIterator {
   def next(): Option[Set[Expr]]
 }
 
+/**
+  * Base trait for boolean SAT solver
+  */
 trait BoolSat {
 
   def getSolution(e: Expr): Option[Set[Expr]] = iterator(e).next()
@@ -25,6 +31,4 @@ trait BoolSat {
   }
 
   def iterator(e: Expr): BoolSatIterator
-
-  def isSatisfiable(expr: Expr): Boolean = getSolution(expr).isDefined
 }

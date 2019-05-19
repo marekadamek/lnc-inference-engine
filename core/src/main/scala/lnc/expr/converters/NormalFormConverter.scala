@@ -6,6 +6,14 @@ import lnc.utils.Memoize
 
 object NormalFormConverter {
 
+  import Memoize._
+
+  /**
+    * Transform input formula by recursively moving N operator outside
+    * @param expr input LNC formula
+    * @param d depth od input formula
+    * @return LNC formula
+    */
   def moveNextOutside(expr: Expr, d: Int): Expr = expr match {
     case True | False | Var(_) => expr
 
@@ -59,14 +67,17 @@ object NormalFormConverter {
           Eq(x1, x2)
       }
 
-
     case Change(x, l) => moveNextOutside(x, d) match {
       case Next(x1, l1) => Next(Change(x1, l), l1)
       case x1 => Change(x1, l)
     }
-
   }
 
+  /**
+    * Converts input LNC formula to equivalent LN formula by replacing C operator with N accordingly to C operator definition.
+    * @param expr input LNC formula
+    * @return LN formula equivalent to input formula
+    */
   def convertToLN(expr: Expr): Expr = {
     def loop(e: Expr): Expr = e match {
       case True | False | Var(_) => e
@@ -88,7 +99,7 @@ object NormalFormConverter {
         loop(Eq(s, Not(Next(s, 1))))
     }
 
-    Memoize.withCache(loop)(expr)
+    withCache(loop)(expr)
   }
 
   /**
@@ -102,7 +113,7 @@ object NormalFormConverter {
     def loop(e: Expr): Expr = e match {
       case True | Next(True, _) => True
       case False | Next(False, _) => False
-      case _ if e.isTerm => e
+      case _ if Expr.isTerm(e) => e
       case Not(x) => Not(loop(x))
       case And(es) => And(es.map(loop))
       case Or(es) => Or(es.map(loop))
@@ -119,13 +130,13 @@ object NormalFormConverter {
       }
     }
 
-    Memoize.withCache(loop)(expr)
+    withCache(loop)(expr)
   }
 
   def moveNegInside(expr: Expr): Expr = {
     def loop(e: Expr): Expr = e match {
       case True | False => e
-      case _ if e.isTerm => e
+      case _ if Expr.isTerm(e) => e
       case And(es) => And(es.map(loop))
       case Or(es) => Or(es.map(loop))
       case Impl(e1, e2) => loop(Or(Set(!e1, e2)))
@@ -146,10 +157,23 @@ object NormalFormConverter {
     Memoize.withCache(loop)(expr)
   }
 
-  def optimize(ln: Expr): Expr = optimize(ln, LNC.depth(ln))
+  /**
+    * LN formula preprocessing
+    * @param ln input LN formula (no C operator)
+    * @return LNC formula for which input formula is satisfiable if output if satisfiable
+    */
+  def preprocess(ln: Expr): Expr = preprocess(ln, LNC.depth(ln))
 
-  def optimize(ln: Expr, d: Int): Expr = {
-    val flat = moveNextOutside(ln.simplify, d)
+  /**
+    *
+    * LN formula preprocessing
+    * @param ln input LN formula (no C operator)
+    * @return LN formula for which input formula is satisfiable if output if satisfiable
+    * @param d depth of input formula
+    * @return LN formula for which input formula is satisfiable if output if satisfiable
+    */
+  def preprocess(ln: Expr, d: Int): Expr = {
+    val nOut = moveNextOutside(ln.simplify, d)
 
     def dropN(expr: Expr) = expr match {
       case Next(x, _) => x
@@ -160,13 +184,13 @@ object NormalFormConverter {
       case _ => expr
     }
 
-    dropN(flat)
+    dropN(nOut)
   }
 
   def convertToNormalForm(e: Expr): Expr = {
-    val a = convertToLN(e)
-    val b = moveNInside(a)
-    val c = moveNegInside(b)
-    c.simplify
+    val ln = convertToLN(e)
+    val nInside = moveNInside(ln)
+    val negInsige = moveNegInside(nInside)
+    negInsige.simplify
   }
 }

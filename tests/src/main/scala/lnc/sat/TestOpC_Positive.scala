@@ -13,7 +13,7 @@ import time._
 
 object TestOpC_Positive extends App with AppConfig {
 
-  val n = 10
+  val n = 50
 
   val formatter = new SimpleDateFormat("hh:mm")
 
@@ -25,14 +25,15 @@ object TestOpC_Positive extends App with AppConfig {
 
     // begin table
     val (formula, fileName) = {
-      val (f, file) = TestFormulas.negativeC(n, d)
+      val (f, file) = TestFormulas.positiveC(n, d)
       val ln = NormalFormConverter.convertToLN(f)
-      val optimized = NormalFormConverter.optimize(ln)
+      val optimized = NormalFormConverter.preprocess(ln)
       (optimized, file)
     }
 
     val (cycle, cycleTIme) = measureTime {
-      LNCModel(formula, SatSolvers.dpllLike).findCycle()
+      //TableAux(formula).next()
+      LNCModel.findCycle(formula, SatSolvers.tableAux)
     }
     println(d, cycleTIme.seconds, cycle.isDefined)
 

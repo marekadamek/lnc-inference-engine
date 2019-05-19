@@ -4,32 +4,16 @@ import lnc.expr.ltl.{Always, Finally, Release, Until}
 
 import scala.collection.mutable
 
+/**
+  * Base trait representing logic formula
+  */
 trait Expr {
+
+  /**
+    * Simplifies "this" to equivalent formula by applying classical logic simplification rules
+    * @return - simplified formula equivalent to input "this"
+    */
   def simplify: Expr = Expr.simplify(this)
-
-  def &(e: Expr): Expr = Expr.and(this, e)
-
-  def |(e: Expr): Expr = Expr.or(this, e)
-
-  def unary_! : Expr = this match {
-    case True => False
-    case False => True
-    case Not(x) => x
-    case _ => Not(this)
-  }
-
-  def ->(e: Expr) = Impl(this, e)
-
-  def `<-`(e: Expr) = Impl(e, this)
-
-  def <->(e: Expr) = Eq(this, e)
-
-  def isTerm: Boolean = this match {
-    case Var(_) | Not(Var(_)) | Next(Var(_), _) | Not(Next(Var(_), _)) => true
-    case _ => false
-  }
-
-
 }
 
 class PrefixExprVisitor(expr: Expr) extends Traversable[Expr] {
@@ -112,6 +96,18 @@ object Expr {
 
   def or(es: Expr*): Expr = or(es.toSet)
 
+  def not(e: Expr): Expr = e match {
+    case True => False
+    case False => True
+    case Not(x) => x
+    case _ => Not(e).simplify
+  }
+
+  /**
+    * Checks whether given set of formulas is contradictory
+    * @param es set of LNC formulas
+    * @return true if input set of formulas is contradictory, otherwise false
+    */
   def isContradictory(es: Set[Expr]): Boolean = {
     if (es.size < 2) false
     else {
@@ -124,8 +120,14 @@ object Expr {
     }
   }
 
+  /**
+    * Checks whether given set of formulas is contradictory with new formula
+    * @param e new LNC formula
+    * @param es set of LNC formulas
+    * @return true if input set of formulas is contradictory with new formula, otherwise false
+    */
   def isContradictory(e: Expr, es: Set[Expr]): Boolean = {
-    es.exists(x => e == !x)
+    es.exists(x => e == Expr.not(x))
   }
 
   def simplify(expr: Expr): Expr = {
@@ -187,7 +189,7 @@ object Expr {
       cache.getOrElseUpdate(e, {
         e match {
           case True | False => e
-          case x if x.isTerm => x
+          case x if isTerm(x) => x
 
           case Not(x) => loop(x) match {
             case True => False
@@ -247,6 +249,55 @@ object Expr {
     loop(expr)
   }
 
+  /**
+    * Simplifies input formula by assigning True and False values to terms accordingly to given set of true terms
+    * @param e input LNC formula
+    * @param terms set of terms values to be assigned
+    * @return simplifies LNC formula
+    */
+  def setTrue(e: Expr, terms: Set[Expr]): Expr = e match {
+
+    case And(es) => setTrueAnd(es.toList, terms)
+
+    case Or(es) => setTrueOr(es.toList, terms)
+
+    case Not(x) => setTrue(x, terms) match {
+      case True => False
+      case False => True
+      case y => !y
+    }
+
+    case Impl(e1, e2) =>
+      setTrue(e1, terms) match {
+        case False => True
+        case True => setTrue(e2, terms)
+        case se1 => setTrue(e2, terms) match {
+          case True => True
+          case False => !se1
+          case se2 => Impl(se1, se2)
+        }
+      }
+
+    case Eq(e1, e2) =>
+      (setTrue(e1, terms), setTrue(e2, terms)) match {
+        case (x, y) if x == y => True
+        case (x, y) if x == !y => False
+        case (True, y) => y
+        case (False, y) => !y
+        case (x, True) => x
+        case (x, False) => !x
+        case (x, y) => Eq(x, y)
+      }
+
+    case t if isTerm(t) && terms.contains(t) => True
+
+    case t if isTerm(t) && terms.contains(!t) => False
+
+    case _ if !isTerm(e) => e
+
+    case _ => e
+  }
+
   private def setTrueAnd(es: List[Expr], terms: Set[Expr], acc: Set[Expr] = Set.empty): Expr = es match {
     case Nil if acc.isEmpty => True
     case Nil if acc == Set(True) => True
@@ -273,45 +324,13 @@ object Expr {
       }
   }
 
-  def setTrue(e: Expr, terms: Set[Expr]): Expr = e match {
-
-    case And(es) => setTrueAnd(es.toList, terms)
-
-    case Or(es) => setTrueOr(es.toList, terms)
-
-    case Not(x) => setTrue(x, terms) match {
-      case True => False
-      case False => True
-      case y => !y
-    }
-    case Impl(e1, e2) =>
-      setTrue(e1, terms) match {
-        case False => True
-        case True => setTrue(e2, terms)
-        case se1 => setTrue(e2, terms) match {
-          case True => True
-          case False => !se1
-          case se2 => Impl(se1, se2)
-        }
-      }
-
-    case Eq(e1, e2) =>
-      (setTrue(e1, terms), setTrue(e2, terms)) match {
-        case (x, y) if x == y => True
-        case (x, y) if x == !y => False
-        case (True, y) => y
-        case (False, y) => !y
-        case (x, True) => x
-        case (x, False) => !x
-        case (x, y) => Eq(x, y)
-      }
-
-    case t if t.isTerm && terms.contains(t) => True
-
-    case t if t.isTerm && terms.contains(!t) => False
-
-    case _ if !e.isTerm => e
-
-    case _ => e
+  /**
+    * Checkes whether given LNC formula is a terms (preposition or temporal proposition)
+    * @param e input LNC formual
+    * @return true if input formula is a term
+    */
+  def isTerm(e: Expr): Boolean = e match {
+    case Var(_) | Not(Var(_)) | Next(Var(_), _) | Not(Next(Var(_), _)) => true
+    case _ => false
   }
 }

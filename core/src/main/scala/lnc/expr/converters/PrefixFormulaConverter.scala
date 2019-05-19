@@ -5,20 +5,26 @@ import lnc.expr.{And, Eq, Expr, False, Impl, N, Not, Or, True, Var}
 
 object PrefixFormulaConverter {
 
+  import LNC._
+  import Expr._
+
+  /**
+    * Calculates prefix of give LN formula
+    * @param ln LN formula
+    * @return LN formula being prefix of give LN formula
+    */
   def calculatePrefix(ln: Expr): (Expr, Set[Set[Expr]]) = {
-    val d = LNC.depth(ln)
-    val reversed = LNC.reverse(ln, d)
+    val d = depth(ln)
+    val reversed = reverse(ln, d)
     val (solved, solutions) = solveBaseLevel(reversed)
     (LNC.reverse(solved), solutions)
   }
 
-  private def solutionsToExpr(solutions: Set[Set[Expr]]): Expr = {
-    if (solutions.isEmpty) {
-      False
-    } else {
-      Expr.or(solutions.map(Expr.and))
-    }
-  }
+  /**
+    * Calculate prefix formula for given LN formula
+    * @param ln input LN formula
+    * @return prefix formula for input formula
+    */
   def prefixFormula(ln: Expr): Expr = {
     val d = LNC.depth(ln)
 
@@ -30,9 +36,16 @@ object PrefixFormulaConverter {
       N(i, p)
     }
 
-    Expr.and(Set(ln) ++ prefixes.toSet)
+    and(Set(ln) ++ prefixes.toSet)
   }
 
+  /**
+    * Solves parial SAT problem (for only atomic prepositions). All formulas related to N operator are skipped.
+    * As a result we get a disjunction of formula possible formulas that may be true in next state.
+    * @param ln input LN formula
+    * @param initSolutions solutions found before, used as heuristics
+    * @return pair where first element is the result formula and second is set of sets of terms that were created during calculation
+    */
   private def solveBaseLevel(ln: Expr, initSolutions: Option[Set[Set[Expr]]] = None): (Expr, Set[Set[Expr]]) = ln match {
     case False => (False, Set.empty)
     case True => (True, Set(Set.empty))
@@ -60,6 +73,29 @@ object PrefixFormulaConverter {
       loopSolutions(it, Set.empty, Set.empty)
   }
 
+  /**
+    * Returns first term or it's negation in given formula
+    * @param expr input LN formula
+    * @return - term or it's negation
+    */
+  private def getTerm(expr: Expr): Option[Expr] = {
+    def getTermLoop(list: List[Expr]): Option[Expr] = list match {
+      case Nil => None
+      case head :: tail => head match {
+        case v: Var => Some(v)
+        case Not(Var(_)) => Some(head)
+        case Not(x) => getTermLoop(x :: tail)
+        case And(es) => getTermLoop(es.toList ::: tail)
+        case Or(es) => getTermLoop(es.toList ::: tail)
+        case Impl(e1, e2) => getTermLoop(e1 :: e2 :: tail)
+        case Eq(e1, e2) => getTermLoop(e1 :: e2 :: tail)
+        case _ => getTermLoop(tail)
+      }
+    }
+
+    getTermLoop(List(expr))
+  }
+
   private case class SuffixBDDIterator(input: Expr, solutions: Set[Set[Expr]]) {
 
     private var toDo = {
@@ -82,26 +118,6 @@ object PrefixFormulaConverter {
       }
     }
 
-    def getTerm(expr: Expr): Option[Expr] = {
-      def getTermLoop(list: List[Expr]): Option[Expr] = list match {
-        case Nil => None
-        case head :: tail => head match {
-          case v: Var => Some(v)
-          case Not(Var(v)) => Some(head)
-          case Not(x) => getTermLoop(x :: tail)
-          case And(es) => getTermLoop(es.toList ::: tail)
-          case Or(es) => getTermLoop(es.toList ::: tail)
-          case Impl(e1, e2) => getTermLoop(e1 :: e2 :: tail)
-          case Eq(e1, e2) => getTermLoop(e1 :: e2 :: tail)
-          case _ => getTermLoop(tail)
-        }
-      }
-
-      getTermLoop(List(expr))
-    }
-
-    private def setTrue(e: Expr, t: Expr) = Expr.setTrue(e, Set(t))
-
     private def expand(e: Expr, terms: List[Expr]): List[(Expr, List[Expr])] = getTerm(e) match {
       case None => Nil
       case Some(t) => List((e, t :: terms), (e, !t :: terms))
@@ -112,7 +128,7 @@ object PrefixFormulaConverter {
       case (e, terms) :: es =>
         toDo = es
 
-        setTrue(e, terms.head) match {
+        setTrue(e, Set(terms.head)) match {
           case True => Some(True, terms.toSet)
           case False => loop()
           case e1 =>

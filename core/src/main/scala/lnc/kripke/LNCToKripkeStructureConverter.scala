@@ -1,12 +1,14 @@
 package lnc.kripke
 
-import lnc.bool.BoolSat
 import lnc.LNC
+import lnc.bool.BoolSat
 import lnc.expr.converters.NormalFormConverter
-import lnc.mc.LNCModelCheker
 import lnc.expr.{Expr, _}
+import lnc.mc.LNCModelChecker
+import LNC._
 
 import scala.collection.mutable
+import NormalFormConverter._
 
 object LNCToKripkeStructureConverter {
   private def perms(vars: List[Expr], acc: List[List[Expr]] = List(Nil)): List[List[Expr]] = vars match {
@@ -31,19 +33,30 @@ object LNCToKripkeStructureConverter {
     }
   }
 
-  private def trim(kripke: KripkeStructure): KripkeStructure = {
+  /**
+    * Recursively removes nodes that do not have successors
+    * @param kripke structure to be trimmed
+    * @return pruned Kripke structure
+    */
+  private def prune(kripke: KripkeStructure): KripkeStructure = {
     val toRemove = kripke.edges.filter(_._2.isEmpty).keys
     if (toRemove.isEmpty) {
       kripke
     } else {
       val trimmed = toRemove.foldLeft(kripke)((kripke, nodeIdx) => kripke.removeNode(nodeIdx))
-      trim(trimmed)
+      prune(trimmed)
     }
   }
 
+  /**
+    * Builds Kripke structure that represents all models of LNC formula
+    * @param formula input LNC formula
+    * @param satSolver helper boolean SAT solver
+    * @return Kripke structure that represents all models of LNC formula
+    */
   def convert(formula: Expr, satSolver: BoolSat): KripkeStructure = {
-    val d = LNC.depth(formula)
-    val vars = LNCModelCheker.getVars(formula)
+    val d = depth(formula)
+    val vars = LNCModelChecker.getVars(formula)
     val allVars =
       (for {
         i <- 0 to d
@@ -52,7 +65,7 @@ object LNCToKripkeStructureConverter {
         N(i, v)
       }).toSet
 
-    val all = satSolver.getAllSolutions(NormalFormConverter.convertToNormalForm(formula))
+    val all = satSolver.getAllSolutions(convertToNormalForm(formula))
 
     val valuations = all.flatMap(addMissingTerms(_, allVars))
 
@@ -62,7 +75,7 @@ object LNCToKripkeStructureConverter {
 
     def getOrAddNode(set: Set[Expr]): Int = {
       nodeMap.getOrElseUpdate(set, {
-        val terms = set.filter(LNC.depth(_) == 0)
+        val terms = set.filter(depth(_) == 0)
         val node = KripkeStructureNode(lastId, terms, initial = true)
         kripke = kripke.addNode(node)
         lastId += 1
@@ -71,8 +84,8 @@ object LNCToKripkeStructureConverter {
     }
 
     valuations.foreach(v => {
-      val from = v.filter(LNC.depth(_) < d)
-      val to = v.filter(LNC.depth(_) > 0).map {
+      val from = v.filter(depth(_) < d)
+      val to = v.filter(depth(_) > 0).map {
         case Next(e, l) => N(l - 1, e)
         case Not(Next(e, l)) => !N(l - 1, e)
       }
@@ -83,8 +96,6 @@ object LNCToKripkeStructureConverter {
       kripke = kripke.addEdge(fromId, toId)
     })
 
-
-    trim(kripke)
+    prune(kripke)
   }
-
 }

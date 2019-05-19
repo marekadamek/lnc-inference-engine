@@ -1,7 +1,10 @@
 package lnc.kripke
 
-import lnc.expr.{Expr, Var}
-
+/**
+  * Represents Kripke strukture
+  * @param nodes set of nodes kept as map with is as key
+  * @param edges set of edges
+  */
 class KripkeStructure(val nodes: Map[Int, KripkeStructureNode] = Map.empty[Int, KripkeStructureNode],
                       val edges: Map[Int, Set[Int]] = Map.empty[Int, Set[Int]]) {
 
@@ -50,49 +53,29 @@ class KripkeStructure(val nodes: Map[Int, KripkeStructureNode] = Map.empty[Int, 
   def edgesCount: Int = edges.map(_._2.size).sum
 
   def getNodes: Set[KripkeStructureNode] = nodes.values.toSet
-
-  private def bfs(nodes: List[List[Int]], visited: Set[Int], goal: Set[Int]): Option[List[Int]] = nodes match {
-    case Nil => None
-    case path :: tail =>
-      if (goal.contains(path.head)) Some(path.reverse)
-      else {
-        if (visited.contains(path.head)) {
-          bfs(tail, visited, goal)
-        } else {
-          val newPaths = edges(path.head).map(_ :: path).toList
-          bfs(tail ++ newPaths, visited + path.head, goal)
-        }
-      }
-  }
-
-  def findPathBFS(from: Set[Expr], to: Set[Expr]): Option[List[KripkeStructureNode]] = {
-    val startNodes = nodes.values.filter(n => from.forall(n.terms.contains)).map(_.id).toList
-    val goalNodes = nodes.values.filter(n => to.forall(n.terms.contains)).map(_.id).toSet
-
-    bfs(startNodes.map(List(_)), Set.empty, goalNodes).map(_.map(nodes.apply))
-  }
-
-  def prettyPrint(): Unit = {
-    def nodesStr(ts: KripkeStructureNode): String = {
-      ts.terms
-        .filter {
-          case Var(_) => true
-          case _ => false
-        }
-        .toList.sortBy(_.toString).mkString(" ")
-    }
-
-    for {
-      i <- nodes.keys.toList.sorted
-    } {
-      println(nodesStr(nodes(i)))
-    }
-
-    for {
-      i <- nodes.keys.toList.sorted
-      j <- edges(i).toList.sorted
-    } {
-      println(nodesStr(nodes(i)) + "  -->  " + nodesStr(nodes(j)))
-    }
-  }
 }
+
+
+//def prettyPrint(): Unit = {
+//    def nodesStr(ts: KripkeStructureNode): String = {
+//      ts.terms
+//        .filter {
+//          case Var(_) => true
+//          case _ => false
+//        }
+//        .toList.sortBy(_.toString).mkString(" ")
+//    }
+//
+//    for {
+//      i <- nodes.keys.toList.sorted
+//    } {
+//      println(nodesStr(nodes(i)))
+//    }
+//
+//    for {
+//      i <- nodes.keys.toList.sorted
+//      j <- edges(i).toList.sorted
+//    } {
+//      println(nodesStr(nodes(i)) + "  -->  " + nodesStr(nodes(j)))
+//    }
+//  }

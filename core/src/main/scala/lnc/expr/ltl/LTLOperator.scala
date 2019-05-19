@@ -1,13 +1,29 @@
 package lnc.expr.ltl
 
 import lnc.expr._
+import lnc.expr.Expr
 
+/**
+  * Base trait for LTL temporal operators that do not exist in LNC
+  */
 trait LTLOperator extends Expr {
-  def toLNC(d: Int) = LTLOperator.toLnc(this, d)
+
+  /**
+    * Converts LTL formula to equivalent LNC formula of given depth
+    * @param d depth of output formula
+    * @return LNC formula equivalent to input formula
+    */
+  def toLNC(d: Int): Expr = LTLOperator.toLnc(this, d)
 }
 
 object LTLOperator {
+  import Expr._
 
+  /**
+    * Converts LTL formula to equivalent LNC formula of given depth
+    * @param d depth of output formula
+    * @return LNC formula equivalent to input formula
+    */
   def toLnc(e: Expr, d: Int): Expr = e match {
     case True | False | Var(_) => e
     case And(es) => And(es.map(toLnc(_, d)))
@@ -20,11 +36,11 @@ object LTLOperator {
 
     case Always(x) =>
       val se = toLnc(x, d)
-      Expr.and((for (i <- 0 to d) yield N(i, se)).toSet)
+      and((for (i <- 0 to d) yield N(i, se)).toSet)
 
     case Finally(x) =>
       val se = toLnc(x, d)
-      Expr.or((for (i <- 0 to d) yield N(i, se)).toSet)
+      or((for (i <- 0 to d) yield N(i, se)).toSet)
 
     case Until(e1, e2) =>
       val se1 = toLnc(e1, d)
@@ -32,11 +48,10 @@ object LTLOperator {
 
       val ors = for (i <- 0 to d) yield {
         val ands = (for (j <- 0 until i) yield N(j, se1)).toSet + N(i, se2)
-        Expr.and(ands)
+        and(ands)
       }
 
-      Expr.or(ors.toSet)
-
+      or(ors.toSet)
 
     case Release(e1, e2) =>
       val se1 = toLnc(e1, d)
@@ -44,10 +59,9 @@ object LTLOperator {
 
       val ands = for (i <- 0 to d) yield {
         val ors = (for (j <- 0 until i) yield N(j, se1)).toSet + N(i, se2)
-        Expr.or(ors)
+        or(ors)
       }
 
-      Expr.and(ands.toSet)
-
+      and(ands.toSet)
   }
 }

@@ -1,9 +1,9 @@
 package lnc.problems
 
-import lnc.kripke.LNCToKripkeStructureConverter
-import lnc.mc.LNCModel
 import lnc.expr.Expr.and
 import lnc.expr.{C, _}
+import lnc.kripke.{KripkeStructureBFS, LNCToKripkeStructureConverter}
+import lnc.mc.LNCModel
 import lnc.sat.SatSolvers
 
 /**
@@ -85,7 +85,7 @@ object FarmerDilemma extends App {
   }
 
   val (path, pathMeasure) = time.measureTime {
-    kripke.findPathBFS(from, to)
+    KripkeStructureBFS.findPath(kripke, from, to)
   }
 
   printSolution(path.get.map(_.terms))
@@ -116,7 +116,7 @@ object FarmerDilemmaSymbolicDFS extends App {
   import FarmerDilemmaProblem._
 
   val (path, solvingTime) = time.measureTime {
-    LNCModel(problem, SatSolvers.dpllLike).findPathBFS(from, to)
+    LNCModel(problem, SatSolvers.dpllLike).findPathDFS(from, to)
   }
 
   printSolution(path.get)

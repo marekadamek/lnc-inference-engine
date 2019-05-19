@@ -1,6 +1,6 @@
 package lnc.problems
 
-import lnc.kripke.LNCToKripkeStructureConverter
+import lnc.kripke.{KripkeStructureBFS, LNCToKripkeStructureConverter}
 import lnc.mc.LNCModel
 import lnc.expr.Expr._
 import lnc.expr.{C, _}
@@ -129,7 +129,6 @@ object JapaneseIQTestRiverCrossingProblem {
 }
 
 object JapaneseIQTestRiverCrossing extends App {
-
   import JapaneseIQTestRiverCrossingProblem._
 
   val (kripke, graphMeasure) = time.measureTime {
@@ -137,7 +136,7 @@ object JapaneseIQTestRiverCrossing extends App {
   }
 
   val (path, pathMeasure) = time.measureTime {
-    kripke.findPathBFS(from, to)
+    KripkeStructureBFS.findPath(kripke, from, to)
   }
 
   printSolution(path.get.map(_.terms))
@@ -149,7 +148,6 @@ object JapaneseIQTestRiverCrossing extends App {
 }
 
 object JapaneseIQTestRiverCrossingBFS extends App {
-
   import JapaneseIQTestRiverCrossingProblem._
 
   val (path, solvingTime) = time.measureTime {
@@ -157,13 +155,11 @@ object JapaneseIQTestRiverCrossingBFS extends App {
   }
 
   printSolution(path.get)
-
   println()
   println("Execution time (s): " + solvingTime.seconds)
 }
 
 object JapaneseIQTestRiverCrossingDFS extends App {
-
   import JapaneseIQTestRiverCrossingProblem._
 
   val (path, solvingTime) = time.measureTime {
@@ -171,7 +167,6 @@ object JapaneseIQTestRiverCrossingDFS extends App {
   }
 
   printSolution(path.get)
-
   println()
   println("Execution time (s): " + solvingTime.seconds)
 }

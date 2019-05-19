@@ -2,21 +2,33 @@ package lnc.mc
 
 import lnc.LNC
 import lnc.bool.{BoolSat, BoolSatIterator}
-import lnc.expr.converters.{NormalFormConverter, PrefixFormulaConverter}
+import lnc.expr.Expr.isContradictory
+import lnc.expr.converters.NormalFormConverter
 import lnc.expr.{Expr, N, Next, Not}
 import lnc.kripke.LNCToKripkeStructureConverter.addMissingTerms
 import lnc.kripke.{KripkeStructure, LNCToKripkeStructureConverter}
-
+import Expr._
 import scala.collection.mutable
 
+/**
+  * Rpresents symbolic model described by LNC formula
+  * @param formula input formula
+  * @param satSolver helper SAT solver
+  */
 case class LNCModel(formula: Expr, satSolver: BoolSat) {
 
   private val normal = NormalFormConverter.convertToNormalForm(formula)
-  private val baseVars = LNCModelCheker.getVars(formula)
+  private val baseVars = LNCModelChecker.getVars(formula)
 
+  /**
+    * Finds path between two nodes using BFS
+    * @param from star node
+    * @param to goal node
+    * @return path if exists
+    */
   def findPathBFS(from: Set[Expr], to: Set[Expr]): Option[List[Set[Expr]]] = {
     def getNext(node: Set[Expr], visited: Set[Set[Expr]]): Set[Set[Expr]] = {
-      val simplified = Expr.setTrue(normal, node)
+      val simplified = setTrue(normal, node)
 
       satSolver.getAllSolutions(simplified).map(_.filter(LNC.depth(_) > 0) map {
         case Next(e, l) => N(l - 1, e)
@@ -48,9 +60,15 @@ case class LNCModel(formula: Expr, satSolver: BoolSat) {
     bfs(init)
   }
 
+  /**
+    * Finds path between two nodes using DFS
+    * @param from star node
+    * @param to goal node
+    * @return path if exists
+    */
   def findPathDFS(from: Set[Expr], to: Set[Expr]): Option[List[Set[Expr]]] = {
     def getIterator(node: Set[Expr]): BoolSatIterator = {
-      val simplified = Expr.setTrue(normal, node)
+      val simplified = setTrue(normal, node)
       satSolver.iterator(simplified)
     }
 
@@ -101,18 +119,35 @@ case class LNCModel(formula: Expr, satSolver: BoolSat) {
   }
 
 
-  def findCycle(): Option[Set[Expr]] = {
-    val (prefix, _) = PrefixFormulaConverter.calculatePrefix(NormalFormConverter.convertToNormalForm(formula))
+  /**
+    * Builds Kripke structure that represents all models of LNC formula
+    * @param satSolver helper boolean SAT solver
+    * @return Kripke structure that represents all models of LNC formula
+    */
+  def toKripkeStructure(satSolver: BoolSat): KripkeStructure = {
+    LNCToKripkeStructureConverter.convert(formula, satSolver)
+  }
+}
 
+object LNCModel {
+
+  import NormalFormConverter._
+
+  /**
+    * Checks whether given LNC formula is satisfiable by detecting a cycle
+    *
+    * @param formula   - input LNC formula
+    * @param satSolver - helper boolean SAT solver
+    * @return found cycle if exists, otherwise None
+    */
+  def findCycle(formula: Expr, satSolver: BoolSat): Option[List[Set[Expr]]] = {
+    val normal = convertToNormalForm(formula)
     val visited = mutable.Set.empty[Set[Expr]]
-    val mainIt = satSolver.iterator(prefix)
-
+    val mainIt = satSolver.iterator(normal)
     val cache = mutable.Map.empty[Set[Expr], BoolSatIterator]
 
-    def matches(s1: Set[Expr], s2: Set[Expr]) = s1 == s2
-
     def getIterator(n: Set[Expr]) = cache.getOrElseUpdate(n, new BoolSatIterator {
-      private val simp = Expr.setTrue(normal, n)
+      private val simp = setTrue(normal, n)
       private val it = satSolver.iterator(simp)
 
       override def next(): Option[Set[Expr]] = it.next().map(s => (s ++ n)
@@ -123,31 +158,24 @@ case class LNCModel(formula: Expr, satSolver: BoolSat) {
         })
     })
 
-
-    var result = Option.empty[Set[Expr]]
     var start = mainIt.next()
 
-    while (start.nonEmpty && result.isEmpty) {
+    while (start.nonEmpty) {
+      var toDo = List(List(start.get))
 
-      var toDo = start
-        .map(s => List((List(s), getIterator(s))))
-        .getOrElse(Nil)
+      while (toDo.nonEmpty) {
+        val path = toDo.head
 
-      while (toDo.nonEmpty && result.isEmpty) {
-        val (path, it) = toDo.head
-
-        if (path.tail.exists(s => matches(s, path.head))) {
-          result = Some(path.head)
+        if (path.tail.exists(s => !isContradictory(s ++ path.head))) {
+          return Some(path.reverse)
         } else {
           if (!visited.contains(path.head)) {
-            it.next() match {
+            getIterator(path.head).next() match {
               case None =>
                 visited.add(path.head)
                 toDo = toDo.tail
               case Some(next) =>
-                val nextIt = getIterator(next)
-
-                toDo = (next :: path, nextIt) :: toDo
+                toDo = (next :: path) :: toDo
             }
           } else {
             toDo = toDo.tail
@@ -155,15 +183,9 @@ case class LNCModel(formula: Expr, satSolver: BoolSat) {
         }
       }
 
-      if (result.isEmpty) {
-        start = mainIt.next()
-      }
+      start = mainIt.next()
     }
 
-    result
-  }
-
-  def toKripkeStructure(satSolver: BoolSat): KripkeStructure = {
-    LNCToKripkeStructureConverter.convert(formula, satSolver)
+    None
   }
 }

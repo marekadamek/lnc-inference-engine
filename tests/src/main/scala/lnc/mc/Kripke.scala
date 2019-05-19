@@ -67,14 +67,13 @@ object Kripke extends App with AppConfig {
   private val targetDir = config.getString("nusmvMCFilesDir")
   private val spotTargetDir = config.getString("spotMCFilesTargetDir")
 
-
   //val specification = NormalFormConverter.convertToLN(p1 | N(2, p1))
-  val contraExample = LNCModelCheker.verify(model, spec1, SatSolvers.tableAux, Some(100))
+  val contraExample = LNCModelChecker.verify(model, spec1, SatSolvers.tableAux, Some(100))
   println(contraExample)
 
 
  // ModelCheckingSMVExporter.convert(model, specification, Paths.get(targetDir, "test.smv"))
-  ModelCheckingSPOTExporter.convert(model, List(spec1), Paths.get(spotTargetDir, "test.spot"))
+ // ModelCheckingSPOTExporter.convert(model, List(spec1), Paths.get(spotTargetDir, "test.spot"))
 
 
 }

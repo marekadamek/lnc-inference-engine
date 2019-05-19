@@ -1,8 +1,8 @@
 package lnc
 
 import kripke.LNCToKripkeStructureConverter
-import lnc.mc.LNCModelCheker
 import lnc.expr._
+import lnc.mc.LNCModelChecker
 import lnc.sat.SatSolvers
 import time._
 
@@ -20,7 +20,7 @@ object LNCAsModel extends App with AppConfig {
   println(time.seconds)
 
 
-  val contraExample = LNCModelCheker.verify(kripke, formula, SatSolvers.tableAux, None)
+  val contraExample = LNCModelChecker.verify(kripke, formula, SatSolvers.tableAux, None)
 
   println(contraExample)
 

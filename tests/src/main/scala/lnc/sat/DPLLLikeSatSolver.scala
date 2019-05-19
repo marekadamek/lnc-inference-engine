@@ -18,7 +18,7 @@ case class DPLLLikeSatSolver(expr: Expr) extends BoolSatIterator {
     case Nil => None
     case head :: tail => head match {
       case True | False => getTerm(tail)
-      case _ if head.isTerm => Some(head)
+      case _ if Expr.isTerm(head) => Some(head)
       case And(es) => getTerm(es.toList ::: tail)
       case Or(es) => getTerm(es.toList ::: tail)
       case Impl(e1, e2) => getTerm(e1 :: e2 :: tail)

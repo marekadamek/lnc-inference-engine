@@ -1,12 +1,17 @@
 package lnc.mc
 
-import lnc.bool.BoolSat
-import lnc.kripke.{KripkeStructure, KripkeStructureNode}
 import lnc.LNC
+import lnc.bool.BoolSat
+import lnc.expr.Expr._
 import lnc.expr._
+import lnc.kripke.{KripkeStructure, KripkeStructureNode}
 
-import scala.collection.mutable
-
+/**
+  * Kripke structure paths iterator
+  * @param model Kripke structure
+  * @param initialNodes initial nodes
+  * @param d length of paths
+  */
 class PathIterator(model: KripkeStructure, initialNodes: Set[KripkeStructureNode], d: Int) extends Iterator[List[KripkeStructureNode]] {
   private var toDo = initialNodes.map(List(_)).toList
 
@@ -26,18 +31,16 @@ class PathIterator(model: KripkeStructure, initialNodes: Set[KripkeStructureNode
   }
 }
 
-object LNCModelCheker {
+/**
+  * Solves Model Checking problem for given model represented as Kripke strukture and spec as LNC formula
+  */
+object LNCModelChecker {
 
-  var cache = mutable.Map.empty[(Int, Int), Expr]
-
-  private def perms(vars: List[Var], limit: Int, acc: List[List[Expr]] = List(Nil)): List[List[Expr]] = vars match {
-    case Nil => acc
-    case _ if acc.size >= limit => acc.take(limit)
-    case v :: vs =>
-      val newAcc = acc.flatMap(s => List(v :: s, Not(v) :: s))
-      perms(vs, limit, newAcc)
-  }
-
+  /**
+    * Gets the set of reachable nodes in given Kripke structure
+    * @param model kripke structure
+    * @return set of reachable nodes
+    */
   private def getReachableNodes(model: KripkeStructure): Set[KripkeStructureNode] = {
     var reachMap = model.getNodes.map(n => (n.id, false)).toMap
 
@@ -57,13 +60,19 @@ object LNCModelCheker {
     reachMap.filter(_._2).keys.map(model.nodes.apply).toSet
   }
 
-  private def fitToSpec(model: KripkeStructure, vars: Set[Expr]) = {
+  /**
+    * Removes terms from model that are not present in spec formula
+    * @param model model under verification
+    * @param terms terms present in spec formula
+    * @return
+    */
+  private def fitToSpec(model: KripkeStructure, terms: Set[Expr]) = {
     val nodes = model.nodes.mapValues(node => {
-      var terms = node.terms.intersect(vars)
-      if (terms.isEmpty) {
-        terms = Set(True)
+      var common = node.terms.intersect(terms)
+      if (common.isEmpty) {
+        common = Set(True)
       }
-      node.copy(terms = terms)
+      node.copy(terms = common)
     })
 
     new KripkeStructure(nodes, model.edges)
@@ -76,6 +85,12 @@ object LNCModelCheker {
     new PathIterator(modelFit, reachableNodes, depth + 1)
   }
 
+  /**
+    * Converts Kripke structure to LNC formula which represents all/subset possible subpaths present in the model
+    * @param it path iterator
+    * @param pathsAtOnce optional. If defined converts  a subset of subpaths. If not defined all subpaths are converted
+    * @return LNC formula
+    */
   private def convertModelToFormula(it: PathIterator, pathsAtOnce: Option[Int]): Option[Expr] = {
     val paths = pathsAtOnce match {
       case Some(n) => it.take(n).toSet
@@ -86,19 +101,15 @@ object LNCModelCheker {
       None
     } else {
       val ors = paths.map(path =>
-        Expr.and(path.zipWithIndex
+        and(path.zipWithIndex
           .map { case (node, idx) =>
-            N(idx, Expr.and(node.terms))
+            N(idx, and(node.terms))
           }
           .toSet)
       )
 
-      Some(Expr.or(ors))
+      Some(or(ors))
     }
-  }
-
-  private def solveMC(expr: Expr, satSolver: BoolSat): Option[Set[Expr]] = {
-    satSolver.getSolution(expr)
   }
 
   def getVars(expr: Expr): Set[Expr] = expr match {
@@ -113,12 +124,15 @@ object LNCModelCheker {
     case Eq(e1, e2) => getVars(e1) ++ getVars(e2)
   }
 
+  /**
+    * Verifies if model given as Kripke Structure satisfies spec given as LNC formula
+    * @param model model under verification
+    * @param specification LNC formula
+    * @param satSolver helper booelan SAT solver
+    * @param pathsAtOnce optional. If defined converts  a subset of subpaths. If not defined all subpaths are converted
+    * @return if model satisfies specification is it None. Otherwise LNC formula representing counterexample is returned
+    */
   def verify(model: KripkeStructure, specification: Expr, satSolver: BoolSat, pathsAtOnce: Option[Int]): Option[Set[Expr]] = {
-    println(s"Nodes: ${model.nodesCount}")
-    println(s"Initial nodes: ${model.initialNodesCount}")
-    println(s"Edges: ${model.edgesCount}")
-    println
-
     val vars = getVars(specification)
     val depth = LNC.depth(specification)
 
@@ -130,7 +144,7 @@ object LNCModelCheker {
         case None => continue = false
         case Some(modelAsFormula) =>
           val finalFormula = modelAsFormula & !specification
-          solveMC(finalFormula, satSolver) match {
+          satSolver.getSolution(finalFormula) match {
             case Some(e) =>
               result = Some(e)
               continue = false
