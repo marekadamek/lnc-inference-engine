@@ -13,7 +13,7 @@ import time._
 
 object TestOpC_Positive extends App with AppConfig {
 
-  val n = 50
+  val n = 1
 
   val formatter = new SimpleDateFormat("hh:mm")
 
@@ -25,7 +25,7 @@ object TestOpC_Positive extends App with AppConfig {
 
     // begin table
     val (formula, fileName) = {
-      val (f, file) = TestFormulas.positiveC(n, d)
+      val (f, file) = TestFormulas.negativeC(n, d)
       val ln = NormalFormConverter.convertToLN(f)
       val optimized = NormalFormConverter.preprocess(ln)
       (optimized, file)

@@ -13,7 +13,7 @@ trait Expr {
     * Simplifies "this" to equivalent formula by applying classical logic simplification rules
     * @return - simplified formula equivalent to input "this"
     */
-  def simplify: Expr = Expr.simplify(this)
+  lazy val simplify: Expr = Expr.simplify(this)
 }
 
 class PrefixExprVisitor(expr: Expr) extends Traversable[Expr] {
@@ -77,21 +77,46 @@ class InfixExprVisitor(expr: Expr) extends Traversable[Expr] {
 object Expr {
 
   def and(es: Set[Expr]): Expr = {
-    es.size match {
-      case 0 => False
-      case 1 => es.head
-      case _ => And(es)
+    def andLoop(list: List[Expr], acc: Set[Expr]): Expr = list match {
+      case Nil =>
+        acc.size match {
+          case 0 => False
+          case 1 => acc.head
+          case _ => And(acc)
+        }
+
+      case e :: tail => e match {
+          case False => False
+          case _ if isContradictory(e, acc) => False
+          case And(xs) => andLoop(tail, acc ++ xs)
+          case _ => andLoop(tail, acc + e)
+        }
     }
+
+    andLoop(es.toList, Set.empty)
   }
 
   def and(es: Expr*): Expr = and(es.toSet)
 
   def or(es: Set[Expr]): Expr = {
-    es.size match {
-      case 0 => False
-      case 1 => es.head
-      case _ => Or(es)
+    def orLoop(list: List[Expr], acc: Set[Expr]): Expr = list match {
+      case Nil =>
+        acc.size match {
+          case 0 => False
+          case 1 => acc.head
+          case _ => Or(acc)
+        }
+
+      case e :: tail => e match {
+        case False => False
+        case _ if isContradictory(e, acc) => True
+        case Or(xs) => orLoop(tail, acc ++ xs)
+        case _ => orLoop(tail, acc + e)
+      }
     }
+
+    orLoop(es.toList, Set.empty)
+
   }
 
   def or(es: Expr*): Expr = or(es.toSet)
@@ -100,7 +125,7 @@ object Expr {
     case True => False
     case False => True
     case Not(x) => x
-    case _ => Not(e).simplify
+    case _ => Not(e)
   }
 
   /**

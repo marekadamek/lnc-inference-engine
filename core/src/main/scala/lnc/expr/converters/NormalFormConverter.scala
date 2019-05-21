@@ -173,7 +173,7 @@ object NormalFormConverter {
     * @return LN formula for which input formula is satisfiable if output if satisfiable
     */
   def preprocess(ln: Expr, d: Int): Expr = {
-    val nOut = moveNextOutside(ln.simplify, d)
+    val nOut = moveNextOutside(ln, d)
 
     def dropN(expr: Expr) = expr match {
       case Next(x, _) => x
