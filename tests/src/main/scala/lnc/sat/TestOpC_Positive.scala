@@ -1,59 +1,56 @@
 package lnc.sat
 
-import java.nio.file.Paths
 import java.text.SimpleDateFormat
 
-import lnc.kripke.LNCToKripkeStructureConverter
-import lnc.{AppConfig, LNC}
-import lnc.external.PltlExporter
-import lnc.mc.LNCModel
 import lnc.expr._
 import lnc.expr.converters.NormalFormConverter
+import lnc.mc.LNCModel
+import lnc.{AppConfig, LNC}
 import time._
 
 object TestOpC_Positive extends App with AppConfig {
 
-  val n = 1
+  val n = 100
 
   val formatter = new SimpleDateFormat("hh:mm")
 
   //for (d <- 100 to 1000 by 100) {
-  for (d <- 1 to 16 by 1) {
+  for (d <- 100 to 1000 by 100) {
     //println()
     //println(d + " " + formatter.format(new Date))
     //println()
 
     // begin table
     val (formula, fileName) = {
-      val (f, file) = TestFormulas.negativeC(n, d)
+      val (f, file) = TestFormulas.positiveN(n, d)
       val ln = NormalFormConverter.convertToLN(f)
       val optimized = NormalFormConverter.preprocess(ln)
       (optimized, file)
     }
 
-    val (cycle, cycleTIme) = measureTime {
-      //TableAux(formula).next()
-      LNCModel.findCycle(formula, SatSolvers.tableAux)
+//    val (cycle, cycleTIme) = measureTime {
+//      //TableAux(formula).next()
+//      LNCModel.findCycle(formula, SatSolvers.tableAux)
+//    }
+//    println(d, cycleTIme.seconds, cycle.isDefined)
+
+
+    val (prefixFormula, prefixTime) = measureTime {
+      LNC.calculatePrefixFormula(formula)
     }
-    println(d, cycleTIme.seconds, cycle.isDefined)
 
 
-//        val (prefixFormula, prefixTime) = measureTime {
-//          LNC.calculatePrefixFormula(formula)
-//        }
-//
-//
-//        val (solution, tableTime) = measureTime {
-//          prefixFormula match {
-//            case False => None
-//            case True => Some(True)
-//            case _ =>
-//              val normal = NormalFormConverter.convertToNormalForm(prefixFormula)
-//              SatSolvers.dpllLike.iterator(normal).next()
-//          }
-//        }
-//
-//        println(d, prefixTime.seconds, tableTime.seconds, solution.isDefined)
+    val (solution, tableTime) = measureTime {
+      prefixFormula match {
+        case False => None
+        case True => Some(True)
+        case _ =>
+          val normal = NormalFormConverter.convertToNormalForm(prefixFormula)
+          SatSolvers.tableAux.iterator(normal).next()
+      }
+    }
+
+    println(d, prefixTime.seconds, tableTime.seconds, solution.isDefined)
 
 
     //    println(s"$d ${prefixTime.seconds}, ${tableTime.seconds}")
@@ -81,11 +78,11 @@ object TestOpC_Positive extends App with AppConfig {
 
     //
     //    //pltl
-//    val pltlDir = config.getString("pltlFilesDir")
-//    val (_, pltlTime) = measureTime {
-//      //PltlExporter.convert(prefixFormula, Paths.get(pltlDir, s"$fileName.pltl"))
-//      PltlExporter.convert(prefixFormula, Paths.get(pltlDir, s"test$d.pltl"))
-//    }
+    //    val pltlDir = config.getString("pltlFilesDir")
+    //    val (_, pltlTime) = measureTime {
+    //      //PltlExporter.convert(prefixFormula, Paths.get(pltlDir, s"$fileName.pltl"))
+    //      PltlExporter.convert(prefixFormula, Paths.get(pltlDir, s"test$d.pltl"))
+    //    }
     //println(s"PLTL export time (ms): ${pltlTime.seconds}")
 
     //pltl
