@@ -5,7 +5,7 @@ import scala.io.Source
 
 object CSVtoPlots extends App{
 
-  val csv = "/Users/marek/git/phd/csv/n100.csv"
+  val csv = "/Users/marek/git/phd/csv/not_n100.csv"
 
   val it = Source.fromFile(csv).getLines()
 
@@ -26,7 +26,7 @@ object CSVtoPlots extends App{
         }
       })
 
-      val latexPlots = plotMap.values.map(lb => {
+      val latexPlots = plotMap.toList.sortBy(_._1).map(_._2).map(lb => {
         s"""
            |\\addplot
            |coordinates{${lb.toString}};
@@ -40,7 +40,7 @@ object CSVtoPlots extends App{
           |}
         """.stripMargin
 
-     val output = (latexPlots.toList ++ List(legend)).mkString("\n")
+     val output = (latexPlots ++ List(legend)).mkString("\n")
 
       println(output)
   }

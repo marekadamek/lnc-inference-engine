@@ -10,29 +10,29 @@ import time._
 
 object TestOpC_Positive extends App with AppConfig {
 
-  val n = 100
+  val n = 1
 
   val formatter = new SimpleDateFormat("hh:mm")
 
   //for (d <- 100 to 1000 by 100) {
-  for (d <- 100 to 1000 by 100) {
+  for (d <- 1 to 16 by 1) {
     //println()
     //println(d + " " + formatter.format(new Date))
     //println()
 
     // begin table
     val (formula, fileName) = {
-      val (f, file) = TestFormulas.positiveN(n, d)
+      val (f, file) = TestFormulas.positiveC(n, d)
       val ln = NormalFormConverter.convertToLN(f)
       val optimized = NormalFormConverter.preprocess(ln)
       (optimized, file)
     }
 
-//    val (cycle, cycleTIme) = measureTime {
-//      //TableAux(formula).next()
-//      LNCModel.findCycle(formula, SatSolvers.tableAux)
-//    }
-//    println(d, cycleTIme.seconds, cycle.isDefined)
+    val (cycle, cycleTIme) = measureTime {
+      //TableAux(formula).next()
+      LNCModel.findCycle(formula, SatSolvers.tableAux)
+    }
+    println(d, "cycle", cycleTIme.seconds, cycle.isDefined)
 
 
     val (prefixFormula, prefixTime) = measureTime {
@@ -50,8 +50,8 @@ object TestOpC_Positive extends App with AppConfig {
       }
     }
 
-    println(d, prefixTime.seconds, tableTime.seconds, solution.isDefined)
-
+    println(d, "prefix", prefixTime.seconds, tableTime.seconds, solution.isDefined)
+    println()
 
     //    println(s"$d ${prefixTime.seconds}, ${tableTime.seconds}")
     //    println(s"${solution.isDefined}")
