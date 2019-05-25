@@ -11,7 +11,7 @@ object PltlExporter extends Exporter {
   def convert(input: Expr, writer: Writer): Unit = {
     var elems = List[Any](input)
 
-   // writer.write("G(")
+    writer.write("G(")
 
     while (elems.nonEmpty) {
       val (e, tail) = (elems.head, elems.tail)
@@ -74,6 +74,6 @@ object PltlExporter extends Exporter {
       elems = newElems ::: tail
     }
 
-   // writer.write(")")
+    writer.write(")")
   }
 }

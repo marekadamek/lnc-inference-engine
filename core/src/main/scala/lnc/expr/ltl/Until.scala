@@ -8,5 +8,5 @@ import lnc.expr.Expr
   * @param e2 second operand
   */
 case class Until(e1: Expr, e2: Expr) extends LTLOperator {
-  override def simplify: Expr = Until(e1.simplify, e2.simplify)
+  override lazy val simplify: Expr = Until(e1.simplify, e2.simplify)
 }

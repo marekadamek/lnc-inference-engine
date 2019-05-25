@@ -80,20 +80,22 @@ object Expr {
     def andLoop(list: List[Expr], acc: Set[Expr]): Expr = list match {
       case Nil =>
         acc.size match {
-          case 0 => False
+          case 0 => True
           case 1 => acc.head
           case _ => And(acc)
         }
 
       case e :: tail => e match {
           case False => False
+          case True => andLoop(tail, acc)
           case _ if isContradictory(e, acc) => False
           case And(xs) => andLoop(tail, acc ++ xs)
           case _ => andLoop(tail, acc + e)
         }
     }
 
-    andLoop(es.toList, Set.empty)
+    if (es.isEmpty) False
+    else andLoop(es.toList, Set.empty)
   }
 
   def and(es: Expr*): Expr = and(es.toSet)
@@ -108,14 +110,16 @@ object Expr {
         }
 
       case e :: tail => e match {
-        case False => False
+        case True => True
+        case False => orLoop(tail, acc)
         case _ if isContradictory(e, acc) => True
         case Or(xs) => orLoop(tail, acc ++ xs)
         case _ => orLoop(tail, acc + e)
       }
     }
 
-    orLoop(es.toList, Set.empty)
+    if (es.isEmpty) False
+    else orLoop(es.toList, Set.empty)
 
   }
 

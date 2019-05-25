@@ -1,11 +1,13 @@
 package lnc.sat
 
+import java.nio.file.Paths
 import java.text.SimpleDateFormat
 
 import lnc.expr._
-import lnc.expr.converters.NormalFormConverter
-import lnc.mc.LNCModel
 import lnc.{AppConfig, LNC}
+import lnc.expr.converters.NormalFormConverter
+import lnc.external.{BoolToCNF, CnfExporter, PltlExporter}
+import lnc.mc.LNCModel
 import time._
 
 object TestOpC_Positive extends App with AppConfig {
@@ -15,7 +17,7 @@ object TestOpC_Positive extends App with AppConfig {
   val formatter = new SimpleDateFormat("hh:mm")
 
   //for (d <- 100 to 1000 by 100) {
-  for (d <- 1 to 16 by 1) {
+  for (d <- 12 to 16 by 1) {
     //println()
     //println(d + " " + formatter.format(new Date))
     //println()
@@ -28,17 +30,17 @@ object TestOpC_Positive extends App with AppConfig {
       (optimized, file)
     }
 
-    val (cycle, cycleTIme) = measureTime {
-      //TableAux(formula).next()
-      LNCModel.findCycle(formula, SatSolvers.tableAux)
-    }
-    println(d, "cycle", cycleTIme.seconds, cycle.isDefined)
+
+    //println("dnf", dnf, dnfTime.seconds)
+//    val (cycle, cycleTIme) = measureTime {
+//      LNCModel.findCycle(formula, SatSolvers.tableAux)
+//    }
+    //println(d, "cycle", cycleTIme.seconds, cycle.isDefined)
 
 
     val (prefixFormula, prefixTime) = measureTime {
       LNC.calculatePrefixFormula(formula)
     }
-
 
     val (solution, tableTime) = measureTime {
       prefixFormula match {
@@ -50,8 +52,7 @@ object TestOpC_Positive extends App with AppConfig {
       }
     }
 
-    println(d, "prefix", prefixTime.seconds, tableTime.seconds, solution.isDefined)
-    println()
+   //println(List(prefixTime.seconds).mkString(",")) //tableTime.seconds).mkString(","))
 
     //    println(s"$d ${prefixTime.seconds}, ${tableTime.seconds}")
     //    println(s"${solution.isDefined}")
@@ -68,22 +69,22 @@ object TestOpC_Positive extends App with AppConfig {
     //    println(s"${solution2.isDefined}")
 
 
-    //    //cnf
-    //        val cnfDir = config.getString("cnfFilesDir")
-    //        val (map, cnfTime) = measureTime {
-    //          val forSAT = LNC.simplify(NormalFormConverter.moveNInside(prefixFormula2))
-    //          CnfExporter.exportToFile(forSAT, Paths.get(cnfDir, s"$fileName.cnf"))
-    //        }
-    //        println(cnfTime.seconds)
+        //cnf
+//            val cnfDir = config.getString("cnfFilesDir")
+//            val (map, cnfTime) = measureTime {
+//              val forSAT = NormalFormConverter.convertToNormalForm(!prefixFormula)
+//              CnfExporter.exportToFile(forSAT, Paths.get(cnfDir, s"$fileName.cnf"))
+//            }
+//
+    println(List(prefixTime.seconds, tableTime.seconds/*, cnfTime.seconds*/).mkString(","))
 
     //
-    //    //pltl
-    //    val pltlDir = config.getString("pltlFilesDir")
-    //    val (_, pltlTime) = measureTime {
-    //      //PltlExporter.convert(prefixFormula, Paths.get(pltlDir, s"$fileName.pltl"))
-    //      PltlExporter.convert(prefixFormula, Paths.get(pltlDir, s"test$d.pltl"))
-    //    }
-    //println(s"PLTL export time (ms): ${pltlTime.seconds}")
+        //pltl
+//        val pltlDir = config.getString("pltlFilesDir")
+//        val (_, pltlTime) = measureTime {
+//          PltlExporter.convert(formula, Paths.get(pltlDir, s"$fileName.pltl"))
+//        }
+//    println(s"PLTL export time (ms): ${pltlTime.seconds}")
 
     //pltl
 

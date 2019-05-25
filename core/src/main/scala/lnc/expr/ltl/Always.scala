@@ -7,7 +7,7 @@ import lnc.expr.Expr
   * @param e operand
   */
 case class Always(e: Expr) extends LTLOperator {
-  override def simplify: Expr = e match {
+  override lazy val simplify: Expr = e match {
     case Always(e1) => Always(e1.simplify)
     case _ => Always(e.simplify)
   }

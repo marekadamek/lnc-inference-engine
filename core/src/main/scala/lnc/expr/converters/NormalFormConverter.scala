@@ -10,8 +10,9 @@ object NormalFormConverter {
 
   /**
     * Transform input formula by recursively moving N operator outside
+    *
     * @param expr input LNC formula
-    * @param d depth od input formula
+    * @param d    depth od input formula
     * @return LNC formula
     */
   def moveNextOutside(expr: Expr, d: Int): Expr = expr match {
@@ -75,6 +76,7 @@ object NormalFormConverter {
 
   /**
     * Converts input LNC formula to equivalent LN formula by replacing C operator with N accordingly to C operator definition.
+    *
     * @param expr input LNC formula
     * @return LN formula equivalent to input formula
     */
@@ -159,6 +161,7 @@ object NormalFormConverter {
 
   /**
     * LN formula preprocessing
+    *
     * @param ln input LN formula (no C operator)
     * @return LNC formula for which input formula is satisfiable if output if satisfiable
     */
@@ -167,6 +170,7 @@ object NormalFormConverter {
   /**
     *
     * LN formula preprocessing
+    *
     * @param ln input LN formula (no C operator)
     * @return LN formula for which input formula is satisfiable if output if satisfiable
     * @param d depth of input formula
@@ -184,7 +188,20 @@ object NormalFormConverter {
       case _ => expr
     }
 
-    dropN(nOut)
+    dropN(nOut) match {
+      case and@And(es) =>
+        val newD = LNC.depth(and)
+        val newES = es.flatMap(e => {
+          val eD = LNC.depth(e)
+          for (i <- 0 to newD - eD) yield {
+            N(i, e)
+          }
+        })
+
+        Expr.and(newES)
+
+      case e => e
+    }
   }
 
   def convertToNormalForm(e: Expr): Expr = {
