@@ -25,20 +25,18 @@ object KripkeStructureGenerator {
     }
   }
 
-  def generateRandomStructure(nodesCount: Int, initialNodes: Int, edgesCount: Int, prepositions: Int): KripkeStructure = {
+  def generateRandomStructure(nodesCount: Int, initialNodes: Int, edgesCount: Int, vars: List[Var]): KripkeStructure = {
     require(initialNodes <= nodesCount)
     require(edgesCount >= nodesCount && edgesCount <= nodesCount * nodesCount)
 
-    val initials = rnd.shuffle(1 to nodesCount).take(initialNodes).toSet
-
-    val vars = (for (i <- 1 to prepositions) yield Var(s"p$i")).toList
+  //  val initials = rnd.shuffle(1 to nodesCount).take(initialNodes).toSet
 
     var structure = new KripkeStructure
     val edges = mutable.Set.empty[(Int, Int)]
 
     for (id <- 1 to nodesCount) {
       val preps = generateRandomPrepositions(vars)
-      val node = KripkeStructureNode(id, preps, initials.contains(id))
+      val node = KripkeStructureNode(id, preps, true)
       structure = structure.addNode(node)
       edges.add((id, randomNodeId(nodesCount)))
     }
@@ -58,4 +56,26 @@ object KripkeStructureGenerator {
     structure
   }
 
+  def allNodesTheSame(nodesCount: Int, initialNodes: Int, edgesCount: Int, terms: List[Var]): KripkeStructure = {
+    val kripke = generateRandomStructure(nodesCount, initialNodes, edgesCount, terms)
+    val newNodes = kripke.nodes.mapValues(_.copy(terms = terms.toSet))
+    new KripkeStructure(newNodes, kripke.edges)
+  }
+
+  def oneDifferent(nodesCount: Int, initialNodes: Int, edgesCount: Int, terms: List[Var]): KripkeStructure = {
+    val kripke = allNodesTheSame(nodesCount, initialNodes, edgesCount, terms)
+    val rIdx = kripke.nodes.keys.toList(rnd.nextInt(kripke.nodesCount))
+    val node = kripke.nodes(rIdx)
+    node.copy(terms = {
+      val e = node.terms.head
+      node.terms - e + Expr.not(e)
+    })
+
+    val newNodes = kripke.nodes.updated(rIdx, node.copy(terms = {
+      val e = node.terms.head
+      node.terms - e + Expr.not(e)
+    }))
+
+    new KripkeStructure(newNodes, kripke.edges)
+  }
 }

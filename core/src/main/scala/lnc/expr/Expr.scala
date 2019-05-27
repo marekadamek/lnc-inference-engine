@@ -11,6 +11,7 @@ trait Expr {
 
   /**
     * Simplifies "this" to equivalent formula by applying classical logic simplification rules
+    *
     * @return - simplified formula equivalent to input "this"
     */
   lazy val simplify: Expr = Expr.simplify(this)
@@ -76,6 +77,11 @@ class InfixExprVisitor(expr: Expr) extends Traversable[Expr] {
 
 object Expr {
 
+  val T: Expr = True
+  val F: Expr = False
+
+  def v(name: String): Expr = Var(name)
+
   def and(es: Set[Expr]): Expr = {
     def andLoop(list: List[Expr], acc: Set[Expr]): Expr = list match {
       case Nil =>
@@ -86,12 +92,12 @@ object Expr {
         }
 
       case e :: tail => e match {
-          case False => False
-          case True => andLoop(tail, acc)
-          case _ if isContradictory(e, acc) => False
-          case And(xs) => andLoop(tail, acc ++ xs)
-          case _ => andLoop(tail, acc + e)
-        }
+        case False => False
+        case True => andLoop(tail, acc)
+        case _ if isContradictory(e, acc) => False
+        case And(xs) => andLoop(tail, acc ++ xs)
+        case _ => andLoop(tail, acc + e)
+      }
     }
 
     if (es.isEmpty) False
@@ -132,8 +138,30 @@ object Expr {
     case _ => Not(e)
   }
 
+  def impl(e1: Expr, e2: Expr): Expr = (e1, e2) match {
+    case (False, _) => True
+    case (_, True) => True
+    case (True, _) => e2
+    case (_, False) => Expr.not(e1)
+    case (x, y) if x == y => e1
+    case _ => Impl(e1, e2)
+  }
+
+  def eq(e1: Expr, e2: Expr) = (e1, e2) match {
+    case (True, _) => e2
+    case (False, _) => Expr.not(e2)
+    case (_, True) => e1
+    case (_, False) => Expr.not(e1)
+    case (x, y) if x == y => True
+    case (x, y) if x == Expr.not(y) => False
+    case (Not(x), Not(y)) => Eq(x, y)
+    case (x, y) => Eq(x, y)
+
+  }
+
   /**
     * Checks whether given set of formulas is contradictory
+    *
     * @param es set of LNC formulas
     * @return true if input set of formulas is contradictory, otherwise false
     */
@@ -151,7 +179,8 @@ object Expr {
 
   /**
     * Checks whether given set of formulas is contradictory with new formula
-    * @param e new LNC formula
+    *
+    * @param e  new LNC formula
     * @param es set of LNC formulas
     * @return true if input set of formulas is contradictory with new formula, otherwise false
     */
@@ -280,7 +309,8 @@ object Expr {
 
   /**
     * Simplifies input formula by assigning True and False values to terms accordingly to given set of true terms
-    * @param e input LNC formula
+    *
+    * @param e     input LNC formula
     * @param terms set of terms values to be assigned
     * @return simplifies LNC formula
     */
@@ -355,6 +385,7 @@ object Expr {
 
   /**
     * Checkes whether given LNC formula is a terms (preposition or temporal proposition)
+    *
     * @param e input LNC formual
     * @return true if input formula is a term
     */

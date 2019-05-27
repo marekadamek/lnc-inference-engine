@@ -2,6 +2,7 @@ package lnc.sat
 
 import lnc.bool._
 import lnc.expr.Expr
+import lnc.expr.converters.NormalFormConverter
 
 object SatSolvers {
 
@@ -17,6 +18,9 @@ object SatSolvers {
 
   val dpllLike = new BoolSat {
 
-    override def iterator(e: Expr): BoolSatIterator = DPLLLikeSatSolver(e)
+    override def iterator(e: Expr): BoolSatIterator = {
+      val normal = NormalFormConverter.convertToNormalForm(e)
+      DPLLLikeSatSolver(normal)
+    }
   }
 }

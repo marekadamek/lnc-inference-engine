@@ -5,7 +5,7 @@ import scala.io.Source
 
 object CSVtoPlots extends App{
 
-  val csv = "/Users/marek/git/phd/csv/c_50.csv"
+  val csv = "/Users/marek/git/phd/csv/mc/random_3.csv"
 
   val it = Source.fromFile(csv).getLines()
 
@@ -19,7 +19,7 @@ object CSVtoPlots extends App{
 
       val plotMap = plots.zipWithIndex.map(p => p._2 -> new StringBuilder).toMap
 
-      it.drop(8).foreach(line => {
+      it.foreach(line => {
         line.split(",").toList match {
           case d :: times =>
             times.zipWithIndex.filter(_._1.nonEmpty).foreach(x => plotMap(x._2).append(s"($d, ${x._1})"))

@@ -1,11 +1,12 @@
 package lnc.expr.converters
 
 import lnc.LNC
-import lnc.expr.{And, Change, Eq, Expr, False, Impl, N, Next, Not, Or, True, Var}
+import lnc.expr._
 import lnc.utils.Memoize
 
 object NormalFormConverter {
 
+  import Expr._
   import Memoize._
 
   /**
@@ -37,7 +38,7 @@ object NormalFormConverter {
       }
 
       if (minN > 0) N(minN, And(nOut.map(_.asInstanceOf[Next]).map(n => N(n.level - minN, n.e))))
-      else And(nOut)
+      else Expr.and(nOut)
 
     case Or(es) =>
       val nOut = es.map(moveNextOutside(_, d))
@@ -48,29 +49,29 @@ object NormalFormConverter {
       }
 
       if (minN > 0) N(minN, Or(nOut.map(_.asInstanceOf[Next]).map(n => N(n.level - minN, n.e))))
-      else Or(nOut)
+      else Expr.or(nOut)
 
     case Impl(e1, e2) =>
       (moveNextOutside(e1, d), moveNextOutside(e2, d)) match {
         case (Next(x1, l1), Next(x2, l2)) =>
           val minN = Math.min(l1, l2)
-          N(minN, Impl(N(l1 - minN, x1), N(l2 - minN, x2)))
+          N(minN, Expr.impl(N(l1 - minN, x1), N(l2 - minN, x2)))
         case (x1, x2) =>
-          Impl(x1, x2)
+          Expr.impl(x1, x2)
       }
 
     case Eq(e1, e2) =>
       (moveNextOutside(e1, d), moveNextOutside(e2, d)) match {
         case (Next(x1, l1), Next(x2, l2)) =>
           val minN = Math.min(l1, l2)
-          N(minN, Eq(N(l1 - minN, x1), N(l2 - minN, x2)))
+          N(minN, Expr.eq(N(l1 - minN, x1), N(l2 - minN, x2)))
         case (x1, x2) =>
-          Eq(x1, x2)
+          Expr.impl(x1, x2)
       }
 
     case Change(x, l) => moveNextOutside(x, d) match {
-      case Next(x1, l1) => Next(Change(x1, l), l1)
-      case x1 => Change(x1, l)
+      case Next(x1, l1) => N(l1, C(l, x1))
+      case x1 => C(l, x1)
     }
   }
 
@@ -115,20 +116,20 @@ object NormalFormConverter {
     def loop(e: Expr): Expr = e match {
       case True | Next(True, _) => True
       case False | Next(False, _) => False
-      case _ if Expr.isTerm(e) => e
-      case Not(x) => Not(loop(x))
-      case And(es) => And(es.map(loop))
-      case Or(es) => Or(es.map(loop))
-      case Impl(e1, e2) => Impl(loop(e1), loop(e2))
-      case Eq(e1, e2) => Eq(loop(e1), loop(e2))
+      case _ if isTerm(e) => e
+      case Not(x) => not(loop(x))
+      case And(es) => and(es.map(loop))
+      case Or(es) => or(es.map(loop))
+      case Impl(e1, e2) => impl(loop(e1), loop(e2))
+      case Eq(e1, e2) => Expr.eq(loop(e1), loop(e2))
 
       case Next(x, l) => x match {
-        case Next(x1, l1) => loop(Next(x1, l + l1))
-        case Not(x1) => loop(Not(Next(x1, l)))
-        case And(es) => loop(And(es.map(Next(_, l).asInstanceOf[Expr])))
-        case Or(es) => loop(Or(es.map(Next(_, l).asInstanceOf[Expr])))
-        case Impl(e1, e2) => loop(Impl(Next(e1, l), Next(e2, l)))
-        case Eq(e1, e2) => loop(Eq(Next(e1, l), Next(e2, l)))
+        case Next(x1, l1) => loop(N(l + l1, x1))
+        case Not(x1) => loop(not(N(l, x1)))
+        case And(es) => loop(and(es.map(N(l, _))))
+        case Or(es) => loop(and(es.map(N(l, _))))
+        case Impl(e1, e2) => loop(impl(N(l, e1), N(l, e2)))
+        case Eq(e1, e2) => loop(Expr.eq(N(l, e1), N(l, e2)))
       }
     }
 
@@ -139,20 +140,20 @@ object NormalFormConverter {
     def loop(e: Expr): Expr = e match {
       case True | False => e
       case _ if Expr.isTerm(e) => e
-      case And(es) => And(es.map(loop))
-      case Or(es) => Or(es.map(loop))
-      case Impl(e1, e2) => loop(Or(Set(!e1, e2)))
-      case Eq(e1, e2) => Eq(loop(e1), loop(e2))
-      case Next(x, l) => Next(loop(x), l)
+      case And(es) => Expr.and(es.map(loop))
+      case Or(es) => Expr.or(es.map(loop))
+      case Impl(e1, e2) => loop(Expr.or(Set(!e1, e2)))
+      case Eq(e1, e2) => Expr.eq(loop(e1), loop(e2))
+      case Next(x, l) => N(l, loop(x))
       case Not(x) => x match {
         case True | Next(True, _) => False
         case False | Next(True, _) => True
         case Not(x1) => loop(x1)
-        case And(es) => loop(Or(es.map(!_)))
-        case Or(es) => loop(And(es.map(!_)))
-        case Impl(e1, e2) => loop(And(e1, !e2))
-        case Eq(e1, e2) => loop(Eq(!e1, e2))
-        case Next(_, l) => e
+        case And(es) => loop(or(es.map(!_)))
+        case Or(es) => loop(and(es.map(!_)))
+        case Impl(e1, e2) => loop(and(e1, not(e2)))
+        case Eq(e1, e2) => loop(Expr.eq(!e1, e2))
+        case Next(_, _) => e
       }
     }
 

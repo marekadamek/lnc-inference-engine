@@ -20,7 +20,7 @@ object LNCAsModel extends App with AppConfig {
   println(time.seconds)
 
 
-  val contraExample = LNCModelChecker.verify(kripke, formula, SatSolvers.tableAux, None)
+  val contraExample = LNCModelChecker.verify(kripke, List(formula), SatSolvers.tableAux, None)
 
   println(contraExample)
 

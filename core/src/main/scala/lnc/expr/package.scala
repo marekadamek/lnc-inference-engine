@@ -31,7 +31,15 @@ package object expr {
 
   def N(e: Expr): Expr = N(1, e)
 
-  def C(level: Int, e: Expr): Expr = Change(e, level)
+  def C(level: Int, e: Expr): Expr = e match {
+    case Change(Not(x), l) => C(l, x)
+    case Change(x, l) =>
+      C(l + level, x)
+    case _ =>
+      if (level == 0) e
+      else Change(e, level)
+  }
+
 
   def C(e: Expr): Expr = C(1, e)
 }

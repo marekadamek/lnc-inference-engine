@@ -34,7 +34,7 @@ object ModelCheckingSPOTExporter extends AppConfig {
       case Next(x, l) => s"X(${loop(Next(x, l - 1))})"
     }
 
-    s"G(${loop(NormalFormConverter.convertToLN(spec))})"
+    s"G(${loop(spec)})"
   }
 
   def convert(model: KripkeStructure, spec: List[Expr], writer: Writer): Unit = {

@@ -1,7 +1,10 @@
 package lnc.kripke
 
+import lnc.expr.{Not, Var}
+
 /**
   * Represents Kripke strukture
+  *
   * @param nodes set of nodes kept as map with is as key
   * @param edges set of edges
   */
@@ -53,29 +56,34 @@ class KripkeStructure(val nodes: Map[Int, KripkeStructureNode] = Map.empty[Int, 
   def edgesCount: Int = edges.map(_._2.size).sum
 
   def getNodes: Set[KripkeStructureNode] = nodes.values.toSet
+
+  def prettyPrint(): Unit = {
+      def nodesStr(ts: KripkeStructureNode): String = {
+        if (ts.terms.isEmpty) {
+          "T"
+        } else {
+          ts.terms
+            .filter {
+              case Var(_) | Not(Var(_)) => true
+              case _ => false
+            }
+            .toList.sortBy(_.toString).mkString(" ")
+        }
+      }
+
+      for {
+        i <- nodes.keys.toList.sorted
+      } {
+        println(nodesStr(nodes(i)))
+      }
+
+      for {
+        i <- nodes.keys.toList.sorted
+        j <- edges(i).toList.sorted
+      } {
+        println(nodesStr(nodes(i)) + "  -->  " + nodesStr(nodes(j)))
+      }
+    }
 }
 
 
-//def prettyPrint(): Unit = {
-//    def nodesStr(ts: KripkeStructureNode): String = {
-//      ts.terms
-//        .filter {
-//          case Var(_) => true
-//          case _ => false
-//        }
-//        .toList.sortBy(_.toString).mkString(" ")
-//    }
-//
-//    for {
-//      i <- nodes.keys.toList.sorted
-//    } {
-//      println(nodesStr(nodes(i)))
-//    }
-//
-//    for {
-//      i <- nodes.keys.toList.sorted
-//      j <- edges(i).toList.sorted
-//    } {
-//      println(nodesStr(nodes(i)) + "  -->  " + nodesStr(nodes(j)))
-//    }
-//  }
