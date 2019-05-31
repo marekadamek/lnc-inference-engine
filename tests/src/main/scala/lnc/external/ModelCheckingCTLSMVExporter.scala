@@ -5,13 +5,12 @@ import java.nio.file.Path
 
 import lnc.AppConfig
 import lnc.expr._
-import lnc.expr.ltl.{Always, Finally, Release, Until}
 import lnc.kripke.KripkeStructure
 
 import scala.collection.mutable
 import scala.util.Try
 
-object ModelCheckingSMVExporter extends AppConfig {
+object ModelCheckingCTLSMVExporter extends AppConfig {
 
   def convert(model: KripkeStructure, spec: List[Expr], path: Path): Unit = {
     val writer = new BufferedWriter(new FileWriter(path.toFile))
@@ -24,17 +23,14 @@ object ModelCheckingSMVExporter extends AppConfig {
       case True => "TRUE"
       case False => "FALSE"
       case Var(x) => x
+      case Not(Next(x, l)) => loop(N(l, Expr.not(x)))
       case Not(x) => "!" + loop(x)
       case And(es) => "(" + es.map(loop).mkString(" & ") + ")"
       case Or(es) => "(" + es.map(loop).mkString(" | ") + ")"
       case Impl(e1, e2) => "(" + loop(e1) + " -> " + loop(e2) + ")"
       case Eq(e1, e2) => "(" + loop(e1) + " <-> " + loop(e2) + ")"
-      case Next(x, 1) => s"X(${loop(x)})"
-      case Next(x, l) => s"X(${loop(Next(x, l - 1))})"
-      case Always(x) => s"G(${loop(x)})"
-      case Finally(x) => s"F(${loop(x)})"
-      case Until(x, y) => "(" + loop(x) + " U " + loop(y) + ")"
-      case Release(x, y) => "(" + loop(x) + " R " + loop(y) + ")"
+      case Next(x, 1) => s"EX(${loop(x)})"
+      case Next(x, l) => s"EX(${loop(Next(x, l - 1))})"
     }
 
     loop(spec)
@@ -42,7 +38,7 @@ object ModelCheckingSMVExporter extends AppConfig {
 
   def convert(model: KripkeStructure, specs: List[Expr], writer: Writer): Unit = {
 
-    val formulas = specs.map(x => convertSpec(x))
+    val formulas = specs.map(x => "EF(" + convertSpec(x) + ")")
 
     val states = mutable.Set.empty[String]
     val initialStates = mutable.Set.empty[String]
@@ -88,7 +84,7 @@ object ModelCheckingSMVExporter extends AppConfig {
       .map { case (s, next) => s"state = $s : {${next.mkString(", ")}};" }
       .mkString("\n")
 
-    val specBlock = formulas.map(f => s"LTLSPEC\n\t$f").mkString("\n")
+    val specBlock = formulas.map(f => s"SPEC\n\t$f").mkString("\n")
     writer.write(
       s"""
          |MODULE main

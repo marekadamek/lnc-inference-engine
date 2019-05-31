@@ -5,14 +5,14 @@ import java.nio.file.Paths
 import lnc.AppConfig
 import lnc.expr._
 import lnc.expr.converters.NormalFormConverter
-import lnc.external.{ModelCheckingSMVExporter, ModelCheckingSPOTExporter}
+import lnc.external.{ModelCheckingCTLSMVExporter, ModelCheckingLTLSPOTExporter}
 import lnc.sat.SatSolvers
 import time._
 
 object KripkeRandom extends App with AppConfig {
-  val n = 20
-  val d = 4
-  val size = 15
+  val n = 1
+  val d = 0
+  val size = 5
 
   val nodesCount = 1000
 
@@ -41,8 +41,8 @@ object KripkeRandom extends App with AppConfig {
 
     val filename = s"kripke_random${n}_${d}_${size}_$edgesCount"
 
-    ModelCheckingSPOTExporter.convert(model, specs, Paths.get(spotTargetDir, s"$filename.spot"))
-    ModelCheckingSMVExporter.convert(model, specs, Paths.get(targetDir, s"$filename.smv"))
+    ModelCheckingLTLSPOTExporter.convert(model, specs, Paths.get(spotTargetDir, s"$filename.spot"))
+    ModelCheckingCTLSMVExporter.convert(model, specs, Paths.get(targetDir, s"$filename.smv"))
 
     val (counterExamples, time) = measureTime {
       //LNCModelChecker.verify(model, specs, SatSolvers.tableAux, Some(100))

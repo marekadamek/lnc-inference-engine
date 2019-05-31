@@ -1,14 +1,12 @@
 package lnc.kripke
 
-import lnc.LNC
+import lnc.LNC._
 import lnc.bool.BoolSat
-import lnc.expr.converters.NormalFormConverter
+import lnc.expr.converters.NormalFormConverter._
 import lnc.expr.{Expr, _}
 import lnc.mc.LNCModelChecker
-import LNC._
 
 import scala.collection.mutable
-import NormalFormConverter._
 
 object LNCToKripkeStructureConverter {
   private def perms(vars: List[Expr], acc: List[List[Expr]] = List(Nil)): List[List[Expr]] = vars match {
@@ -35,6 +33,7 @@ object LNCToKripkeStructureConverter {
 
   /**
     * Recursively removes nodes that do not have successors
+    *
     * @param kripke structure to be trimmed
     * @return pruned Kripke structure
     */
@@ -48,14 +47,75 @@ object LNCToKripkeStructureConverter {
     }
   }
 
+  private def stripTemporal(kripke: KripkeStructure): KripkeStructure = {
+    val nodes = kripke.nodes.mapValues(n => n.copy(terms = n.terms.filter(depth(_) == 0)))
+    new KripkeStructure(nodes, kripke.edges)
+  }
+
   /**
     * Builds Kripke structure that represents all models of LNC formula
-    * @param formula input LNC formula
+    *
+    * @param formula   input LNC formula
     * @param satSolver helper boolean SAT solver
     * @return Kripke structure that represents all models of LNC formula
     */
   def convert(formula: Expr, satSolver: BoolSat): KripkeStructure = {
-    val d = depth(formula)
+    val all = satSolver.getAllSolutions(convertToNormalForm(formula))
+
+    var lastId = 1
+    val nodeMap = mutable.Map.empty[Set[Expr], Int]
+
+    var kripke = new KripkeStructure()
+
+    def getOrAddNode(set: Set[Expr]): Int = {
+      nodeMap.getOrElseUpdate(set, {
+        val terms = set
+        val node = KripkeStructureNode(lastId, terms, initial = true)
+        kripke = kripke.addNode(node)
+        lastId += 1
+        node.id
+      })
+    }
+
+    all.foreach(getOrAddNode)
+
+    var nodes = kripke.nodes.keySet.toList
+    var visited = Set.empty[Int]
+    while (nodes.nonEmpty) {
+      val node :: tail = nodes
+      nodes = tail
+      if (!visited.contains(node)) {
+        visited += node
+
+        val suffix = kripke.nodes(node).terms.filter(depth(_) > 0).map {
+          case Next(e, l) => N(l - 1, e)
+          case Not(Next(e, l)) => !N(l - 1, e)
+        }
+
+        all
+          .map(_ ++ suffix)
+          .filterNot(s => {
+            Expr.isContradictory(s)
+          })
+          .foreach { next =>
+            val to = getOrAddNode(next)
+            kripke = kripke.addEdge(node, to)
+            nodes = to :: nodes
+          }
+      }
+    }
+
+    val pruned = prune(kripke)
+    val structure = stripTemporal(pruned)
+    structure
+  }
+
+  def convertFull(formula: Expr, satSolver: BoolSat): KripkeStructure = {
+    val (modelFormula, d) = depth(formula) match {
+      case 0 => (formula & N(formula), 1)
+      case i => (formula, i)
+    }
+
     val vars = LNCModelChecker.getVars(formula)
     val allVars =
       (for {
@@ -65,12 +125,12 @@ object LNCToKripkeStructureConverter {
         N(i, v)
       }).toSet
 
-    val all = satSolver.getAllSolutions(convertToNormalForm(formula))
-
+    val all = satSolver.getAllSolutions(convertToNormalForm(modelFormula))
     val valuations = all.flatMap(addMissingTerms(_, allVars))
 
     var lastId = 1
     val nodeMap = mutable.Map.empty[Set[Expr], Int]
+
     var kripke = new KripkeStructure()
 
     def getOrAddNode(set: Set[Expr]): Int = {

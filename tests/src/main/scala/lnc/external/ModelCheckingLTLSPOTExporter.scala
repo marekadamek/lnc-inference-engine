@@ -3,20 +3,19 @@ package lnc.external
 import java.io.{BufferedWriter, FileWriter, Writer}
 import java.nio.file.Path
 
-import lnc.kripke.KripkeStructure
 import lnc.AppConfig
-import lnc.expr.Expr
-import lnc.expr.converters.NormalFormConverter
+import lnc.expr.ltl.{Always, Finally, Release, Until}
+import lnc.expr.{Expr, _}
+import lnc.kripke.KripkeStructure
 
 import scala.collection.mutable
 import scala.util.Try
-import lnc.expr._
 
-object ModelCheckingSPOTExporter extends AppConfig {
+object ModelCheckingLTLSPOTExporter extends AppConfig {
 
-  def convert(model: KripkeStructure, specs: List[Expr], path: Path, solutions: Set[Expr] = Set.empty): Unit = {
+  def convert(model: KripkeStructure, specs: List[Expr], path: Path): Unit = {
     val writer = new BufferedWriter(new FileWriter(path.toFile))
-    val t = Try(convert(model, specs, writer, solutions))
+    val t = Try(convert(model, specs, writer))
     writer.close()
   }
 
@@ -32,12 +31,16 @@ object ModelCheckingSPOTExporter extends AppConfig {
       case Eq(e1, e2) => "(" + loop(e1) + " <-> " + loop(e2) + ")"
       case Next(x, 1) => s"X(${loop(x)})"
       case Next(x, l) => s"X(${loop(Next(x, l - 1))})"
+      case Always(x) => s"G(${loop(x)})"
+      case Finally(x) => s"F(${loop(x)})"
+      case Until(x1, x2) => s"(${loop(x1)} U ${loop(x2)})"
+      case Release(x1, x2) => s"(${loop(x1)} R ${loop(x2)})"
     }
 
-    s"$op(${loop(spec)})"
+    s"${loop(spec)}"
   }
 
-  def convert(model: KripkeStructure, spec: List[Expr], writer: Writer,  solutions: Set[Expr]): Unit = {
+  def convert(model: KripkeStructure, spec: List[Expr], writer: Writer): Unit = {
     val states = mutable.Set.empty[(String, String, Boolean)]
     val ap = mutable.Set.empty[String]
     val edges = mutable.Set.empty[String]
@@ -80,7 +83,7 @@ object ModelCheckingSPOTExporter extends AppConfig {
       }
       .mkString("\n")
 
-    val specsCount = spec.size + solutions.size
+    val specsCount = spec.size
     writer.write(
       s"""|${ap.size} ${states.size} ${edges.size} $specsCount
           |${ap.mkString("\n")}
@@ -88,7 +91,6 @@ object ModelCheckingSPOTExporter extends AppConfig {
           |${edges.mkString("\n")}
           |$specsCount
           |${spec.map(convertSpec(_, "G")).mkString("\n")}
-          |${solutions.map(convertSpec(_, "F")).mkString("\n")}
           |""".stripMargin)
   }
 

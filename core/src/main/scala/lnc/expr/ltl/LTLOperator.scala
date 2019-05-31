@@ -1,7 +1,6 @@
 package lnc.expr.ltl
 
-import lnc.expr._
-import lnc.expr.Expr
+import lnc.expr.{Expr, _}
 
 /**
   * Base trait for LTL temporal operators that do not exist in LNC
@@ -10,6 +9,7 @@ trait LTLOperator extends Expr {
 
   /**
     * Converts LTL formula to equivalent LNC formula of given depth
+    *
     * @param d depth of output formula
     * @return LNC formula equivalent to input formula
     */
@@ -17,20 +17,31 @@ trait LTLOperator extends Expr {
 }
 
 object LTLOperator {
+
   import Expr._
 
   /**
     * Converts LTL formula to equivalent LNC formula of given depth
+    *
     * @param d depth of output formula
     * @return LNC formula equivalent to input formula
     */
   def toLnc(e: Expr, d: Int): Expr = e match {
     case True | False | Var(_) => e
-    case And(es) => And(es.map(toLnc(_, d)))
+    case And(es) => Expr.and(es.map(toLnc(_, d)))
     case Or(es) => Or(es.map(toLnc(_, d)))
     case Impl(e1, e2) => Impl(toLnc(e1, d), toLnc(e2, d))
     case Eq(e1, e2) => Eq(toLnc(e1, d), toLnc(e2, d))
+    case Not(x) => x match {
+      case Always(x1) => toLnc(Finally(not(x1)), d)
+      case Finally(x1) => toLnc(Always(not(x1)), d)
+      case Until(x1, x2) => toLnc(Release(not(x1), not(x2)), d)
+      case Release(x1, x2) => toLnc(Until(not(x1), not(x2)), d)
+      case _ => not(toLnc(x, d))
+    }
     case Not(x) => Not(toLnc(x, d))
+    case Not(x) => Not(toLnc(x, d))
+    case Next(Always(x), _) => toLnc(Always(x), d)
     case Next(x, l) => Next(toLnc(x, d), l)
     case Change(x, l) => Change(toLnc(x, d), l)
 

@@ -74,14 +74,14 @@ class KripkeStructure(val nodes: Map[Int, KripkeStructureNode] = Map.empty[Int, 
       for {
         i <- nodes.keys.toList.sorted
       } {
-        println(nodesStr(nodes(i)))
+        println(i + " " + nodesStr(nodes(i)))
       }
 
       for {
         i <- nodes.keys.toList.sorted
         j <- edges(i).toList.sorted
       } {
-        println(nodesStr(nodes(i)) + "  -->  " + nodesStr(nodes(j)))
+        println(nodes(i).id + "  -->  " + nodes(j).id)
       }
     }
 }

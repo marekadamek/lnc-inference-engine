@@ -100,7 +100,7 @@ object MissionariesAndCannibalsProblem {
     , !cannibalsAreMoving -> and(
 
       // the difference in number of missionaries cannot be greater than 2:
-      m0 -> N(m1 | m2)
+      (m0 | m3) -> N(m1 | m2)
       , m1 -> N(m0 | m2 | m3)
       , m2 -> N(m0 | m1 | m3)
     )
@@ -109,7 +109,7 @@ object MissionariesAndCannibalsProblem {
     , !missionariesAreMoving -> and(
 
       // the difference in number of cannibals cannot be greater than 2:
-      c0 -> N(c1 | c2)
+      (c0 | c3) -> N(c1 | c2)
       , c1 -> N(c0 | c2 | c3)
       , c2 -> N(c0 | c1 | c3)
     )
@@ -136,9 +136,9 @@ object MissionariesAndCannibalsProblem {
   )
 
   // all people are on the left side
-  val from: Set[Expr] = Set[Expr](m0, c0, !m1, !m2, !m3, !c1, !c2, !c3, !b)
+  val from: Set[Expr] = Set[Expr](m0, !m1, !m2, !m3, c0, !c1, !c2, !c3, !b)
   // all people are on the right side
-  val to: Set[Expr] = Set[Expr](!m0, !c0, !m1, !m2, m3, !c1, !c2, c3, b)
+  val to: Set[Expr] = Set[Expr](!m0, !m1, !m2, m3, !c0, !c1, !c2, c3, b)
 
   def printSolution(path: List[Set[Expr]]): Unit = {
     path.foreach(x => {
@@ -180,7 +180,7 @@ object MissionariesAndCannibals extends App {
   import MissionariesAndCannibalsProblem._
 
   val (kripke, graphMeasure) = time.measureTime {
-    LNCToKripkeStructureConverter.convert(problem, SatSolvers.dpllLike)
+    LNCToKripkeStructureConverter.convert(problem, SatSolvers.tableAux)
   }
 
   val (path, pathMeasure) = time.measureTime {
@@ -200,7 +200,7 @@ object MissionariesAndCannibalsSymbolicBFS extends App {
   import MissionariesAndCannibalsProblem._
 
   val (path, solvingTime) = time.measureTime {
-    LNCModel(problem, SatSolvers.dpllLike).findPathBFS(from, to)
+    LNCModel(problem, SatSolvers.tableAux).findPathBFS(from, to)
   }
 
   printSolution(path.get)
@@ -212,7 +212,7 @@ object MissionariesAndCannibalsSymbolicDFS extends App {
   import MissionariesAndCannibalsProblem._
 
   val (path, solvingTime) = time.measureTime {
-    LNCModel(problem, SatSolvers.dpllLike).findPathDFS(from, to)
+    LNCModel(problem, SatSolvers.tableAux).findPathDFS(from, to)
   }
 
   printSolution(path.get)

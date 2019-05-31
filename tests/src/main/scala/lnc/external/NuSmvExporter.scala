@@ -9,13 +9,12 @@ import scala.collection.mutable
 
 object NuSmvExporter extends Exporter {
 
-  def convert(input: Expr, writer: Writer): Unit = {
-    val ln = NormalFormConverter.convertToLN(input)
+  def convert(input: List[Expr], writer: Writer): Unit = {
     val vars = mutable.Set.empty[Var]
 
     def loop(e: Expr): String = e match {
-      case True => "True"
-      case False => "False"
+      case True => "TRUE"
+      case False => "FALSE"
       case Var(x) =>
         vars += Var(x)
         x
@@ -29,7 +28,12 @@ object NuSmvExporter extends Exporter {
         else "X(" + loop(Next(x, l - 1)) + ")"
     }
 
-    val formula = "!G(" + loop(ln) + ")"
+    val specs = input
+      .map(f => {
+        val ln = NormalFormConverter.convertToLN(f)
+        "LTLSPEC\n!G(" + loop(ln) + ")"
+      })
+      .mkString("\n")
 
     val varDefs = vars.map(v => s"$v:boolean;").mkString(System.lineSeparator())
 
@@ -38,8 +42,7 @@ object NuSmvExporter extends Exporter {
          |MODULE main
          |VAR
          |$varDefs
-         |LTLSPEC
-         |$formula
+         |$specs
   """.stripMargin)
   }
 }

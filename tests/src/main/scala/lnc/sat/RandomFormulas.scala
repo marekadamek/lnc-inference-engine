@@ -4,44 +4,50 @@ import java.nio.file.Paths
 
 import lnc.expr._
 import lnc.expr.converters.NormalFormConverter
-import lnc.external.PltlExporter
+import lnc.expr.ltl.Always
+import lnc.external.{NuSmvExporter, PltlExporter}
 import lnc.mc.{LNCFormulaGenerator, LNCModel}
 import lnc.{AppConfig, LNC}
 import time._
 
+
 object RandomFormulas extends App with AppConfig {
 
-  val n = 100
-  val d = 5
+  val n = 10
   val size = 30
   val vars = (1 to n).map(i => Var(s"p$i")).toList
 
-  def generateRandomFormulas(count: Int): List[Expr] = {
-    1 to count map {_ => LNCFormulaGenerator.generateRandomFormula(vars, d, size) } toList
-  }
+  for (d <- 10 to 10) {
+    val formulas = LNCFormulaGenerator.generateRandomFormulas(100, vars, d, size)
+      .map(NormalFormConverter.preprocess)
 
-  val formulas = generateRandomFormulas(100).map(NormalFormConverter.convertToLN)
-
-  formulas.zipWithIndex.foreach { case (formula, idx) =>
-    val pltlDir = config.getString("pltlFilesDir")
-    PltlExporter.convert(formula, Paths.get(pltlDir, s"random_${n}_${d}_${size}_$idx.pltl"))
-
-    //println(s"PLTL export time (ms): ${pltlTime.seconds}")
-  }
-
-  val times = formulas.zipWithIndex.map(f => {
-    val optimized = NormalFormConverter.preprocess(f._1)
-
-    val normal = NormalFormConverter.convertToNormalForm(optimized)
-
-    val x = measureTime {
-      LNCModel.findCycle(normal, SatSolvers.dpllLike).isDefined
+    //cycle
+    val (_, cycleTime) = measureTime {
+      formulas.map(LNCModel.findCycle(_, SatSolvers.tableAux))
     }
+//
+//    val (prefixes, prefixTime) = measureTime {
+//      formulas.map(LNC.calculatePrefixFormula)
+//    }
+//
+//    val (_, tableAuxTime) = measureTime {
+//      prefixes.map {
+//        case False => None
+//        case True => Some(True)
+//        case prefixFormula =>
+//          val normal = NormalFormConverter.convertToNormalForm(prefixFormula)
+//          SatSolvers.tableAux.iterator(normal).next()
+//      }
+//    }
 
-    println(f._2, x._1)
+//    println(List[Any](n, d, cycleTime.seconds, prefixTime.seconds, tableAuxTime.seconds).mkString(","))
+    println(List[Any](n, d, cycleTime.seconds).mkString(","))
 
-    x._2.seconds
-  })
-
-  println(times.sum)
+//    //ptlt
+//    val filename = s"random_${n}_$d.pltl"
+//    PltlExporter.convert(formulas.map(Always), Paths.get("/Users/marek/phd/files/pltl/", filename))
+//
+//    //smv
+//    NuSmvExporter.convert(formulas, Paths.get("/Users/marek/phd/files/nusmv/", filename))
+  }
 }

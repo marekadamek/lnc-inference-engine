@@ -1,6 +1,6 @@
 package lnc.expr
 
-import lnc.expr.ltl.{Always, Finally, Release, Until}
+import lnc.expr.ltl._
 
 import scala.collection.mutable
 
@@ -300,6 +300,9 @@ object Expr {
           case Change(Next(x, l1), l) => loop(Next(Change(x, l), l1))
 
           case Change(x, l) => Change(loop(x), l)
+
+          //ltl
+          case ltl: LTLOperator => ltl.simplify
         }
       })
     }

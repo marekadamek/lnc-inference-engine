@@ -48,7 +48,7 @@ object NormalFormConverter {
         case _ => 0
       }
 
-      if (minN > 0) N(minN, Or(nOut.map(_.asInstanceOf[Next]).map(n => N(n.level - minN, n.e))))
+      if (minN > 0) N(minN, or(nOut.map(_.asInstanceOf[Next]).map(n => N(n.level - minN, n.e))))
       else Expr.or(nOut)
 
     case Impl(e1, e2) =>
@@ -85,12 +85,12 @@ object NormalFormConverter {
     def loop(e: Expr): Expr = e match {
       case True | False | Var(_) => e
       case Not(Not(x)) => loop(x)
-      case Not(x) => Not(loop(x))
-      case And(es) => And(es.map(loop))
-      case Or(es) => Or(es.map(loop))
-      case Impl(e1, e2) => Impl(loop(e1), loop(e2))
-      case Eq(e1, e2) => Eq(loop(e1), loop(e2))
-      case Next(x, l) => Next(loop(x), l)
+      case Not(x) => not(loop(x))
+      case And(es) => and(es.map(loop))
+      case Or(es) => or(es.map(loop))
+      case Impl(e1, e2) => impl(loop(e1), loop(e2))
+      case Eq(e1, e2) => Expr.eq(loop(e1), loop(e2))
+      case Next(x, l) => N(l, loop(x))
 
       case Change(x, l) =>
         val arg = x match {
@@ -98,8 +98,8 @@ object NormalFormConverter {
           case _ => x
         }
 
-        val s = if (l > 1) loop(Change(arg, l - 1)) else loop(arg)
-        loop(Eq(s, Not(Next(s, 1))))
+        val s = if (l > 1) loop(C(l - 1, arg)) else loop(arg)
+        loop(Expr.eq(s, not(N(s))))
     }
 
     withCache(loop)(expr)
@@ -127,7 +127,7 @@ object NormalFormConverter {
         case Next(x1, l1) => loop(N(l + l1, x1))
         case Not(x1) => loop(not(N(l, x1)))
         case And(es) => loop(and(es.map(N(l, _))))
-        case Or(es) => loop(and(es.map(N(l, _))))
+        case Or(es) => loop(or(es.map(N(l, _))))
         case Impl(e1, e2) => loop(impl(N(l, e1), N(l, e2)))
         case Eq(e1, e2) => loop(Expr.eq(N(l, e1), N(l, e2)))
       }

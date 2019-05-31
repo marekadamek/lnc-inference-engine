@@ -4,7 +4,7 @@ import java.nio.file.Paths
 
 import lnc.AppConfig
 import lnc.expr._
-import lnc.external.{ModelCheckingSMVExporter, ModelCheckingSPOTExporter}
+import lnc.external.{ModelCheckingCTLSMVExporter, ModelCheckingLTLSPOTExporter}
 import lnc.sat.SatSolvers
 import time._
 
@@ -29,8 +29,8 @@ object KripkeAllTheSame extends App with AppConfig {
   for (d <- 0 to 200 by 20) {
     val spec = Expr.and((0 to d).map(i => N(i, p1)).toSet)
 
-    ModelCheckingSMVExporter.convert(model, List(spec), Paths.get(targetDir, s"kripke_all_$d.smv"))
-    ModelCheckingSPOTExporter.convert(model, List(spec), Paths.get(spotTargetDir, s"kripke_all_$d.spot"))
+    ModelCheckingCTLSMVExporter.convert(model, List(spec), Paths.get(targetDir, s"kripke_all_$d.smv"))
+    ModelCheckingLTLSPOTExporter.convert(model, List(spec), Paths.get(spotTargetDir, s"kripke_all_$d.spot"))
 
     val (result, time) = measureTime {
       LNCModelChecker.verify2(model, List(spec), SatSolvers.tableAux)

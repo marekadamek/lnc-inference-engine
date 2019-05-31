@@ -5,8 +5,8 @@ import lnc.expr.Expr
 object KripkeStructureBFS {
 
   def findPath(kripke: KripkeStructure, from: Set[Expr], to: Set[Expr]): Option[List[KripkeStructureNode]] = {
-    val startNodes = kripke.nodes.values.filter(n => from.forall(n.terms.contains)).map(_.id).toList
-    val goalNodes = kripke.nodes.values.filter(n => to.forall(n.terms.contains)).map(_.id).toSet
+    val startNodes = kripke.nodes.values.filterNot(n => Expr.isContradictory(from ++ n.terms)).map(_.id).toList
+    val goalNodes = kripke.nodes.values.filterNot(n => Expr.isContradictory(to ++ n.terms)).map(_.id).toSet
 
     def bfs(nodes: List[List[Int]], visited: Set[Int], goal: Set[Int]): Option[List[Int]] = nodes match {
       case Nil => None

@@ -2,17 +2,18 @@ package lnc.mc
 
 import lnc.LNC
 import lnc.bool.{BoolSat, BoolSatIterator}
-import lnc.expr.Expr.isContradictory
+import lnc.expr.Expr.{isContradictory, _}
 import lnc.expr.converters.NormalFormConverter
-import lnc.expr.{Expr, N, Next, Not}
+import lnc.expr.{Expr, False, N, Next, Not}
 import lnc.kripke.LNCToKripkeStructureConverter.addMissingTerms
 import lnc.kripke.{KripkeStructure, LNCToKripkeStructureConverter}
-import Expr._
+
 import scala.collection.mutable
 
 /**
   * Rpresents symbolic model described by LNC formula
-  * @param formula input formula
+  *
+  * @param formula   input formula
   * @param satSolver helper SAT solver
   */
 case class LNCModel(formula: Expr, satSolver: BoolSat) {
@@ -22,8 +23,9 @@ case class LNCModel(formula: Expr, satSolver: BoolSat) {
 
   /**
     * Finds path between two nodes using BFS
+    *
     * @param from star node
-    * @param to goal node
+    * @param to   goal node
     * @return path if exists
     */
   def findPathBFS(from: Set[Expr], to: Set[Expr]): Option[List[Set[Expr]]] = {
@@ -62,8 +64,9 @@ case class LNCModel(formula: Expr, satSolver: BoolSat) {
 
   /**
     * Finds path between two nodes using DFS
+    *
     * @param from star node
-    * @param to goal node
+    * @param to   goal node
     * @return path if exists
     */
   def findPathDFS(from: Set[Expr], to: Set[Expr]): Option[List[Set[Expr]]] = {
@@ -85,7 +88,8 @@ case class LNCModel(formula: Expr, satSolver: BoolSat) {
       case Nil => None
       case path :: tail =>
         val found = to.forall(path.head.contains)
-        if (found) Some(path.reverse)
+        if (found)
+          Some(path.reverse)
         else {
           val (processed, it) = itMap(path.head)
           if (processed) {
@@ -110,7 +114,7 @@ case class LNCModel(formula: Expr, satSolver: BoolSat) {
     }
 
 
-    val init = addMissingTerms(from, baseVars)
+    val init = addMissingTerms(from, baseVars).filterNot(x => Expr.setTrue(normal, x) == False)
     init.foreach(n => {
       itMap.put(n, (false, getIterator(n)))
     })
@@ -121,6 +125,7 @@ case class LNCModel(formula: Expr, satSolver: BoolSat) {
 
   /**
     * Builds Kripke structure that represents all models of LNC formula
+    *
     * @param satSolver helper boolean SAT solver
     * @return Kripke structure that represents all models of LNC formula
     */

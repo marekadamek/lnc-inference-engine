@@ -5,7 +5,7 @@ import java.nio.file.Paths
 import lnc.AppConfig
 import lnc.expr._
 import lnc.expr.converters.NormalFormConverter
-import lnc.external.{ModelCheckingSMVExporter, ModelCheckingSPOTExporter}
+import lnc.external.{ModelCheckingCTLSMVExporter, ModelCheckingLTLSPOTExporter}
 import lnc.kripke.{KripkeStructure, KripkeStructureNode}
 import lnc.sat.SatSolvers
 
@@ -47,8 +47,8 @@ object KripkeTrue extends App with AppConfig {
   model = model.addEdge(1, 1)
   val specification = NormalFormConverter.convertToNormalForm(p1)
 
-  ModelCheckingSPOTExporter.convert(model, List(specification), Paths.get(spotTargetDir, s"test.spot"))
-  ModelCheckingSMVExporter.convert(model, List(specification), Paths.get(targetDir, s"test.smv"))
+  ModelCheckingLTLSPOTExporter.convert(model, List(specification), Paths.get(spotTargetDir, s"test.spot"))
+  ModelCheckingCTLSMVExporter.convert(model, List(specification), Paths.get(targetDir, s"test.smv"))
 
   val result = LNCModelChecker.verify(model, specification, SatSolvers.dpllLike, Some(100))
 
@@ -74,8 +74,8 @@ object KripkeASd extends App with AppConfig {
   model = model.addEdge(2, 2)
   val specification = NormalFormConverter.convertToNormalForm(N(p1))
 
-  ModelCheckingSPOTExporter.convert(model, List(specification), Paths.get(spotTargetDir, s"test.spot"))
-  ModelCheckingSMVExporter.convert(model, List(specification), Paths.get(targetDir, s"test.smv"))
+  ModelCheckingLTLSPOTExporter.convert(model, List(specification), Paths.get(spotTargetDir, s"test.spot"))
+  ModelCheckingCTLSMVExporter.convert(model, List(specification), Paths.get(targetDir, s"test.smv"))
 
   val result = LNCModelChecker.verify2(model, List(specification), SatSolvers.dpllLike)
 

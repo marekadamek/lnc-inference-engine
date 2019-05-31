@@ -4,7 +4,7 @@ import scala.io.Source
 
 object CSVtoTable extends App {
 
-  val csv = "/Users/marek/git/phd/csv/mc/random_3.csv"
+  val csv = "/Users/marek/git/phd/csv/ltl/n20.csv"
 
   val it = Source.fromFile(csv).getLines()
 

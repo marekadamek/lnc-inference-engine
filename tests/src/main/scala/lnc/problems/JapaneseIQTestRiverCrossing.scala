@@ -132,7 +132,7 @@ object JapaneseIQTestRiverCrossing extends App {
   import JapaneseIQTestRiverCrossingProblem._
 
   val (kripke, graphMeasure) = time.measureTime {
-    LNCToKripkeStructureConverter.convert(problem, SatSolvers.dpllLike)
+    LNCToKripkeStructureConverter.convertFull(problem, SatSolvers.dpllLike)
   }
 
   val (path, pathMeasure) = time.measureTime {
@@ -151,7 +151,7 @@ object JapaneseIQTestRiverCrossingBFS extends App {
   import JapaneseIQTestRiverCrossingProblem._
 
   val (path, solvingTime) = time.measureTime {
-    LNCModel(problem, SatSolvers.dpllLike).findPathBFS(from, to)
+    LNCModel(problem, SatSolvers.tableAux).findPathBFS(from, to)
   }
 
   printSolution(path.get)
@@ -163,7 +163,7 @@ object JapaneseIQTestRiverCrossingDFS extends App {
   import JapaneseIQTestRiverCrossingProblem._
 
   val (path, solvingTime) = time.measureTime {
-    LNCModel(problem, SatSolvers.dpllLike).findPathDFS(from, to)
+    LNCModel(problem, SatSolvers.tableAux).findPathDFS(from, to)
   }
 
   printSolution(path.get)
