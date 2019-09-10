@@ -17,64 +17,6 @@ trait Expr {
   lazy val simplify: Expr = Expr.simplify(this)
 }
 
-class PrefixExprVisitor(expr: Expr) extends Traversable[Expr] {
-
-  override def foreach[U](f: Expr => U): Unit = {
-
-    def loop(elems: List[Expr]): Unit = elems match {
-      case Nil =>
-      case e :: es =>
-        f(e)
-        e match {
-          case True | False | Var(_) => loop(es)
-          case Not(x) => loop(x :: es)
-          case And(xs) => loop(xs.toList ::: es)
-          case Or(xs) => loop(xs.toList ::: es)
-          case Impl(x1, x2) => loop(x1 :: x2 :: es)
-          case Eq(x1, x2) => loop(x1 :: x2 :: es)
-          case Next(x, _) => loop(x :: es)
-          case Change(x, _) => loop(x :: es)
-
-          case Always(x) => loop(x :: es)
-          case Finally(x) => loop(x :: es)
-          case Until(x1, x2) => loop(x1 :: x2 :: es)
-          case Release(x1, x2) => loop(x1 :: x2 :: es)
-        }
-    }
-
-    loop(List(expr))
-  }
-}
-
-class InfixExprVisitor(expr: Expr) extends Traversable[Expr] {
-
-  override def foreach[U](f: Expr => U): Unit = {
-
-    def loop(elems: List[Expr]): Unit = elems match {
-      case Nil =>
-      case e :: es =>
-        e match {
-          case True | False | Var(_) => loop(es)
-          case Not(x) => loop(x :: es)
-          case And(xs) => loop(xs.toList ::: es)
-          case Or(xs) => loop(xs.toList ::: es)
-          case Impl(x1, x2) => loop(x1 :: x2 :: es)
-          case Eq(x1, x2) => loop(x1 :: x2 :: es)
-          case Next(x, _) => loop(x :: es)
-          case Change(x, _) => loop(x :: es)
-
-          case Always(x) => loop(x :: es)
-          case Finally(x) => loop(x :: es)
-          case Until(x1, x2) => loop(x1 :: x2 :: es)
-          case Release(x1, x2) => loop(x1 :: x2 :: es)
-        }
-    }
-
-    loop(List(expr))
-    f(expr)
-  }
-}
-
 object Expr {
 
   val T: Expr = True

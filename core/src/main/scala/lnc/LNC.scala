@@ -1,16 +1,17 @@
 package lnc
 
 import lnc.expr._
-import lnc.expr.converters.{NormalFormConverter, PrefixFormulaConverter}
+import lnc.expr.converters.NormalFormConverter
 import lnc.expr.ltl.{Always, Finally, Release, Until}
 
 object LNC {
 
   import NormalFormConverter._
-  import PrefixFormulaConverter._
+  import lnc.expr.converters.PrefixFormulaConverter._
 
   /**
     * Calculates depth of the given LNC formula
+    *
     * @param formula LNC formula
     * @return depth of LNC formula
     */
@@ -40,6 +41,7 @@ object LNC {
 
   /**
     * Reverse temporal direction of input formula by symmetrical replacement of N operator nesting
+    *
     * @param e LNC formula
     * @param d depth of input formula
     * @return LNC formula being reversed version of input formula
@@ -51,12 +53,13 @@ object LNC {
     case Not(x) => !reverse(x, d)
     case And(es) => Expr.and(es.map(reverse(_, d)))
     case Or(es) => Expr.or(es.map(reverse(_, d)))
-    case Impl(e1, e2) => Impl(reverse(e1, d), reverse(e2, d))
-    case Eq(e1, e2) => Eq(reverse(e1, d), reverse(e2, d))
+    case Impl(e1, e2) => Expr.impl(reverse(e1, d), reverse(e2, d))
+    case Eq(e1, e2) => Expr.eq(reverse(e1, d), reverse(e2, d))
   }
 
   /**
     * Reverse temporal direction of input formula by symmetrical replacement of N operator nesting
+    *
     * @param e LNC formula
     * @return LNC formula being reversed version of input formula
     */

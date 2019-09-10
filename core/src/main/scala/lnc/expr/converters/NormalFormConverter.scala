@@ -66,7 +66,7 @@ object NormalFormConverter {
           val minN = Math.min(l1, l2)
           N(minN, Expr.eq(N(l1 - minN, x1), N(l2 - minN, x2)))
         case (x1, x2) =>
-          Expr.impl(x1, x2)
+          Expr.eq(x1, x2)
       }
 
     case Change(x, l) => moveNextOutside(x, d) match {
