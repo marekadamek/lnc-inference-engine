@@ -17,7 +17,7 @@ object KripkeOneDifferent extends App with AppConfig {
 
   val nodesCount = 1000
   val initialNodes = 1000
-  val edgesCount = 50000
+  val edgesCount = 500000
 
   val model = KripkeStructureGenerator.oneDifferent(
     nodesCount = nodesCount,
@@ -29,13 +29,13 @@ object KripkeOneDifferent extends App with AppConfig {
   for (d <- 0 to 200 by 20) {
     val spec = Expr.and((0 to d).map(i => N(i, p1)).toSet)
 
-    ModelCheckingCTLSMVExporter.convert(model, List(spec), Paths.get(targetDir, s"kripke_one_$d.smv"))
-    ModelCheckingLTLSPOTExporter.convert(model, List(spec), Paths.get(spotTargetDir, s"kripke_one_$d.spot"))
+    //ModelCheckingCTLSMVExporter.convert(model, List(spec), Paths.get(targetDir, s"kripke_one_$d.smv"))
+    //ModelCheckingLTLSPOTExporter.convert(model, List(spec), Paths.get(spotTargetDir, s"kripke_one_$d.spot"))
 
     val (result, time) = measureTime {
       LNCModelChecker.verify2(model, List(spec), SatSolvers.tableAux)
     }
 
-    println(List(d, time.seconds).mkString(","))
+    println(List(d, time.seconds, result.head).mkString(", "))
   }
 }

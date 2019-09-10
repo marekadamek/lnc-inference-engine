@@ -68,15 +68,21 @@ object ModelCheckingCTLSMVExporter extends AppConfig {
 
     val definitions = defineMap
       .map { case (Var(v), (pos, neg)) =>
-        val statesPos = pos.map(p => s"state = $p").mkString(" | ")
-        val statesNeg = neg.map(p => s"state != $p").mkString(" & ")
+        val statesPos =
+          if (pos.isEmpty) ""
+          else pos.map(p => s"state = $p").mkString(" | ") + ": TRUE;"
 
-        val states =
-          if (statesPos.isEmpty) statesNeg
-          else if (statesNeg.isEmpty) statesPos
-          else statesPos + " & " + statesNeg
+        val statesNeg =
+          if (pos.isEmpty) ""
+          else neg.map(p => s"state = $p").mkString(" | ") + ": FALSE;"
 
-        s"$v := $states;"
+        s"""
+           |$v := case
+           |  $statesPos
+           |  $statesNeg
+           |  TRUE: {TRUE, FALSE};
+           | esac;
+          """.stripMargin
       }
       .mkString("\n")
 
@@ -85,19 +91,22 @@ object ModelCheckingCTLSMVExporter extends AppConfig {
       .mkString("\n")
 
     val specBlock = formulas.map(f => s"SPEC\n\t$f").mkString("\n")
+
+    val vars = defineMap.keys.map(v => s"$v: boolean;").mkString("\n")
+
     writer.write(
       s"""
          |MODULE main
          |VAR
          |  state : {${states.mkString(", ")}};
+         |  $vars
          |ASSIGN
          |   init(state) := {${states.mkString(", ")}};
          |   next(state) :=
          |    case
          |      $transitions
          |    esac;
-         |DEFINE
-         |  $definitions
+         |    $definitions
          |$specBlock
   """.stripMargin)
   }

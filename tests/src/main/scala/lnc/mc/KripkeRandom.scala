@@ -10,11 +10,11 @@ import lnc.sat.SatSolvers
 import time._
 
 object KripkeRandom extends App with AppConfig {
-  val n = 1
-  val d = 0
-  val size = 5
+  val n = 10
+  val d = 4
+  val size = 10
 
-  val nodesCount = 1000
+  val nodesCount = 500
 
   val initialNodes = nodesCount
   val vars = (1 to n).map(i => Var(s"p$i")).toList
@@ -39,13 +39,12 @@ object KripkeRandom extends App with AppConfig {
       vars = vars
     )
 
-    val filename = s"kripke_random${n}_${d}_${size}_$edgesCount"
+    //val filename = s"kripke_random${n}_${d}_${size}_$edgesCount"
 
-    ModelCheckingLTLSPOTExporter.convert(model, specs, Paths.get(spotTargetDir, s"$filename.spot"))
-    ModelCheckingCTLSMVExporter.convert(model, specs, Paths.get(targetDir, s"$filename.smv"))
+    //ModelCheckingLTLSPOTExporter.convert(model, specs, Paths.get(spotTargetDir, s"$filename.spot"))
+    //ModelCheckingCTLSMVExporter.convert(model, specs, Paths.get(targetDir, s"$filename.smv"))
 
     val (counterExamples, time) = measureTime {
-      //LNCModelChecker.verify(model, specs, SatSolvers.tableAux, Some(100))
       LNCModelChecker.verify2(model, specs, SatSolvers.tableAux)
     }
 
@@ -59,8 +58,6 @@ object KripkeRandom extends App with AppConfig {
           }
 
 
-    //println(List(edgesCount, time.seconds).mkString(","))
-    println(List(edgesCount, time.seconds).mkString(","))
-
+    println(List(edgesCount, time.seconds).mkString(", "))
   }
 }
